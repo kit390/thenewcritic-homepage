@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dist",
+      "runtimeExecutable": "/Users/katharineknuppel/.nvm/versions/node/v24.21.0/bin/node",
+      "runtimeArgs": ["serve.js", "8901"],
+      "port": 8901
+    }
+  ]
+}

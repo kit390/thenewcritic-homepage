@@ -1,0 +1,383 @@
+// Per-post card overrides — THE ONE SOURCE (2026-09-17). This file is
+// hand-edited and committed; there is no spreadsheet, CSV or generator
+// behind it any more (make-overrides.js and content-overrides-rich.js
+// were retired and their contents folded in here). To change a post's
+// kicker, byline, preview or crop: edit the entry below and rebuild.
+//
+// Keyed by the post's URL slug — the part after /p/ in its address
+// (…/p/luddite-club -> 'luddite-club'). An override follows its post
+// everywhere it appears (hero, row cards, list pages, archive) and beats
+// whatever the feed provides. Every field is optional:
+//   kicker  — courier header above the title (also the archive's Tag,
+//             and the topic the kicker filters the ledger by)
+//   title   — the card headline
+//   dek     — subheading under the title (Substack's subtitle)
+//   author  — byline in the meta line, shown uppercase
+//   date    — meta-line date text, e.g. 'Jun 30' (the like count stays automatic)
+//   preview — paragraph preview (string, or array for the hero's multiple paragraphs)
+//   focal   — CSS object-position for the cover crop, e.g. 'center 20%'
+
+module.exports = {
+  'manifest-man': {
+    kicker: 'Rationalist Workshop',
+  },
+  'change-my-mind': {
+    kicker: 'Political Betrayal',
+    author: 'Shabbos Kestenbaum',
+  },
+  'behaving-badly': {
+    kicker: 'Movies',
+    author: 'Theodore Gary',
+  },
+  'the-commodification-of-freya-india': {
+    kicker: 'Girlhood',
+    author: 'Freya India',
+    preview: [
+      'Maybe you have heard of Freya India. She is a frequent guest on podcasts hosted by middle-aged men, her interviews are clipped into Reels and TikToks and reposted all over the internet, and she has over 54,000 subscribers on Substack.',
+      'India paints a dystopian, conservative picture of the gen z woman, psychologically damaged by social media, porn, godlessness, decadence, and divorce. India, investigating the source of her own problems, applies her critique to the culture at large. Girls in general, she contends, feel like India once did — lonely, insecure, and scared.',
+      'India, hailing from Essex, England, is only 26. She’s a contributing writer at The Free Press and a contributing “Gen Z voice” for Jonathan Haidt’s After Babel. Now she’s written a mass-market book aptly titled Girls: The Commodification of Everything.',
+      'Fellow mass cultural critics have been quick to anoint her.',
+    ],
+  },
+  'luddite-club': {
+    kicker: 'To Phone or Not?',
+    author: 'Madeline Posner',
+  },
+  'changing-of-the-guard': {
+    kicker: 'Who Is The New Critic?',
+    author: 'The New Critic',
+  },
+  'you-seem-pretty-tame-for-a-girl-in': {
+    kicker: 'Music',
+    author: 'Tessa Augsberger',
+  },
+  'the-blackpill': {
+    kicker: 'Internet Terrorism',
+    author: 'Jacob Zucker',
+  },
+  'terms-of-service': {
+    kicker: 'Movies',
+    author: 'Nadav',
+  },
+  'snug-as-a-gun': {
+    kicker: 'Books',
+    author: 'Max Parness',
+  },
+  'ugly-fleshy-flap': {
+    kicker: 'Music',
+    author: 'Rufus Knuppel',
+  },
+  'now-the-story-please': {
+    kicker: 'Theater',
+    author: 'Isabel Mehta',
+  },
+  'young-mann-in-a-hurry': {
+    kicker: 'Books',
+    author: 'Elan Kluger',
+  },
+  'contra': {
+    kicker: 'The New Critic’s Criticism',
+    author: 'The New Critic',
+  },
+  'last-girl-at-the-beginning-of-history': {
+    kicker: 'New Right Whisperer',
+    author: 'Mana Afsari',
+  },
+  'what-was-college-for-3ce': {
+    kicker: 'Dark Academia',
+    author: 'Benjamin Samuels',
+  },
+  'voluntary-oasis': {
+    kicker: 'Ranch University',
+    author: 'Declan Rexer',
+  },
+  'american-berserk': {
+    kicker: 'An Englishman Goes South',
+    author: 'Samuel Rigg',
+  },
+  'not-new-york': {
+    kicker: 'Postgraduate Exodus',
+    author: 'Declan Rexer',
+  },
+  'worse-than-you-think': {
+    kicker: 'Rational Actor',
+    author: 'Clare Ashcraft',
+  },
+  'collegiate-value': {
+    kicker: 'What is College Worth?',
+    author: 'Clare Ashcraft',
+  },
+  'the-girls-who-watch-girls': {
+    kicker: 'Girlfriends',
+    author: 'Sarah Miller',
+  },
+  'bridge-over-troubled-water': {
+    kicker: 'Adventures in Education',
+    author: 'Owen Yingling',
+  },
+  'https://asteriskmag.substack.com/cp/197596620': {
+    kicker: 'The Risk-Geist',
+    author: 'The New Critic',
+  },
+  'what-was-college-for': {
+    kicker: 'TNC Essay Contest',
+    author: 'The New Critic',
+  },
+  'the-great-zombification': {
+    kicker: 'AI University',
+    author: 'Owen Yingling',
+  },
+  'pathological-nostalgia': {
+    kicker: 'What is Too Much Camp?',
+    author: 'Aitan Avgar, Milo Tasman',
+  },
+  'notes-on-camp': {
+    kicker: 'Rage and Forgiveness at Jewish Summer Camp',
+    author: 'Elan Kluger',
+  },
+  'pee-1': {
+    kicker: 'Alternative Space',
+    author: 'Ryan Merrifield',
+  },
+  'curtis-yarvin-jr': {
+    kicker: 'Right Rationalism',
+    author: 'Steven Miller',
+  },
+  'commute-cursed-by-god': {
+    kicker: 'Driving Mad',
+    author: 'James Milstead',
+  },
+  'couch-burning-season': {
+    kicker: 'March Madness',
+    author: 'Theodore Gary',
+  },
+  'veritas': {
+    kicker: 'Harvard Humanties',
+    author: 'Isabel Mehta',
+  },
+  'beauty-the-last-taboo': {
+    kicker: 'Evil and Sublimity',
+    author: 'Isabel Mehta',
+  },
+  'monitoring-the-monitoring': {
+    kicker: 'Polymarket Pub',
+    author: 'Will Diana',
+  },
+  'the-new-critic-secession': {
+    kicker: 'A New Critic Manifesto',
+    author: 'The New Critic',
+  },
+  'showing-your-work': {
+    kicker: 'How to Think',
+    author: 'Josie Barboriak',
+  },
+  'good-reading-good-thinking-good-writing': {
+    kicker: 'Literary Sociology',
+    author: 'Josie Barboriak',
+  },
+  'naked-journalism': {
+    kicker: 'Covering College',
+    author: 'Charlotte Hampton, Sarah Miller',
+  },
+  'chasing-the-story': {
+    kicker: 'Reporter’s Notebook',
+    author: 'Sarah Miller',
+  },
+  'ps-the-new-new-critic': {
+    kicker: 'Introducing Our Assistant Editors',
+    author: 'The New Critic',
+  },
+  'the-manifesto-is-dead-the-manifesto': {
+    kicker: 'Imperative Prose',
+    author: 'Cathy Li',
+  },
+  'the-manifesto-with-no-name': {
+    kicker: 'Revolution at University',
+    author: 'Ramsey Alsheikh',
+  },
+  'freak-show': {
+    kicker: 'Streaming Hazard',
+    author: 'Theodore Gary',
+  },
+  'holy-fool': {
+    kicker: 'Violence and Sincerity',
+    author: 'Theodore Gary',
+  },
+  'experience-is-psychosis': {
+    kicker: 'Covid Freshmen',
+    author: 'Will Diana',
+  },
+  'strangle-your-idols': {
+    kicker: 'Creative Writing',
+    author: 'Will Diana',
+  },
+  'pdoom': {
+    kicker: 'Quantify Everything',
+    author: 'Rufus Knuppel',
+  },
+  'a-cruel-joke-is-still-a-joke': {
+    kicker: 'Collegiate Blues',
+    author: 'Nadav',
+  },
+  'imagematic-life': {
+    kicker: 'Keeping Track of Self',
+    author: 'Grace Caplan',
+  },
+  'what-troubled-you-in-2025': {
+    kicker: 'Annual Preoccupations',
+    author: 'The New Critic',
+  },
+  'the-crazy-train': {
+    kicker: 'How Effective is Altruism?',
+    author: 'Matthew Adelstein, Noah Birnbaum, Amos Wollen',
+  },
+  'end-times': {
+    kicker: 'Theater Training',
+    author: 'Zayd Vlach',
+  },
+  'finding-a-scene-among-the-corporate': {
+    kicker: 'Absinthe and Yuppies',
+    author: 'Will Diana',
+  },
+  'in-defense-of-the-personal-essay': {
+    kicker: 'Vulnerable Arguments',
+    author: 'Everett Yum',
+  },
+  'great-and-wonderful-days': {
+    kicker: 'Christians and Lies',
+    author: 'Daniel Sandoval',
+  },
+  'becoming-shrimp-pilled': {
+    kicker: 'Veganism Ultra',
+    author: 'Bentham\'s Bulldog',
+  },
+  'some-absolutely-original-thing': {
+    kicker: 'Literary Invention',
+    author: 'Sagar Castleman',
+  },
+  'beyond-pain-an-interview-with-the': {
+    kicker: 'Riding to the Limit',
+    author: 'Elan Kluger',
+  },
+  'blue-guys': {
+    kicker: 'Drunk on College',
+    author: 'Theodore Gary',
+  },
+  'plaster-books-in-a-concrete-prison': {
+    kicker: 'The Stacks',
+    author: 'Jonas Rosenthal',
+  },
+  'against-the-confessional-essay': {
+    kicker: 'Intimate Arguments',
+    author: 'Owen Yingling',
+  },
+  'in-the-beak-of-the-heron': {
+    kicker: 'Exonerating Loneliness',
+    author: 'Will Diana',
+  },
+  'nietzsche-in-friendship': {
+    kicker: 'Good Friend/Bad Friend',
+    author: 'Josie Barboriak',
+  },
+  'all-of-russells-men': {
+    kicker: 'Christian Conservative Pow-Wow',
+    author: 'Elan Kluger',
+  },
+  'the-lesson-of-charlie-kirk': {
+    kicker: 'The Kirk Assassination',
+    author: 'John Coleman',
+  },
+  'the-vagueness-of-her-discontent': {
+    kicker: 'High School English',
+    author: 'Isabel Mehta',
+  },
+  'learning-the-machine-an-interview': {
+    kicker: 'Artificial Interns',
+    author: 'Tessa Augsberger',
+  },
+  'we-ate-the-gods': {
+    kicker: 'Divine Hunger',
+    author: 'Toni Burns',
+  },
+  'living-well': {
+    kicker: 'Wellness Complex',
+    author: 'Arden Yum',
+  },
+  'the-loss-of-reciprocity': {
+    kicker: 'Self-Sufficient Together',
+    author: 'Clare Ashcraft',
+  },
+  'the-college-combinator-an-interview': {
+    kicker: 'How to Prepare for Silicon Valley?',
+    author: 'Elan Kluger',
+  },
+  'those-halcyon-days': {
+    kicker: 'Traumatic Nostalgia',
+    author: 'Dylan Partner',
+  },
+  'the-youth': {
+    kicker: 'Back to Pre-School',
+    author: 'Benjamin Samuels',
+  },
+  'the-disappearing-act': {
+    kicker: 'Dreaming Deluxe',
+    author: 'Milla Ben-Ezra',
+  },
+  'in-need-of-daydreams': {
+    kicker: 'Procrastinating Thinking',
+    author: 'Tessa Augsberger',
+  },
+  'the-attention-seekers': {
+    kicker: 'Attention Activism',
+    author: 'George Porteous',
+  },
+  'true-impressions-of-our-education-e56': {
+    kicker: 'Education as Friendship',
+    author: 'Rufus Knuppel',
+  },
+  'true-impressions-of-our-education': {
+    kicker: 'Education as Religion',
+    author: 'Elan Kluger',
+  },
+  'from-my-perch-in-the-sandhills': {
+    kicker: 'Nebraskan Gothic',
+    author: 'Brendilou Armstrong',
+  },
+  'the-abbey-in-kalamazoo': {
+    kicker: 'The Smell of Caged Men',
+    author: 'Benjamin Samuels',
+  },
+  'from-the-mouth-of-the-flytrap': {
+    kicker: 'Sex Education',
+    author: 'Eva Murillo',
+  },
+  'two-state-friendship': {
+    kicker: 'Israel-Palestine Relations',
+    author: 'Ramsey Alsheikh',
+  },
+  'pulling-the-veil-from-the-void': {
+    kicker: 'Phonelessness',
+    author: 'Rufus Knuppel',
+  },
+  'the-striver-class': {
+    kicker: 'Law School Elites',
+  },
+  'mrbeast-slop-auteur': {
+    kicker: 'YouTube Artistry',
+  },
+  'present-at-the-creation': {
+    kicker: 'Monitoring the Situation',
+  },
+  'jasmine-suns-project-of-self-transformation': {
+    kicker: 'Journalistic Becoming',
+  },
+  'the-doctor-of-girlhood': {
+    kicker: 'Books',
+  },
+  'the-unstageable': {
+    kicker: 'Theater',
+  },
+  'the-new-statesman': {
+    kicker: 'Stylish Literature',
+  },
+};
