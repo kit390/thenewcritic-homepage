@@ -11,6 +11,164 @@ const path = require('path');
 // Hand-edited per-post text overrides (kicker/title/dek/meta/preview),
 // keyed by URL slug — see the field guide at the top of that file.
 const CONTENT_OVERRIDES = require('./content-overrides.js');
+// The wordmark's words (THE, NEW, CRITIC, CRI, TIC), each in the files'
+// old contract, read off the one editable drawing (wordmark.js).
+const WORDMARK_WORDS = require('./wordmark.js').wordmarkWords(path.join(__dirname, 'assets', 'wordmark.svg'));
+// THE STAMP (2026-09-25, at the user's word): the hand-cut bird in its
+// frame, traced to one path from the print (assets/stamp.svg) and
+// stated once a page as a <symbol>; every stamp on the page is a <use>
+// of it, printed in the ink round it (fill: currentColor, so it turns
+// over with the theme). It is the band's own (src/band-mark.js): big in
+// the middle of the air under the name when the page opens, it comes
+// down into the band as the band rises over the name, and stands there
+// in the name's miniature's place; and it stands in the middle of the
+// reprint's ground over the name at the foot (renderPageFoot). THE
+// DATE AND THE LIGHT / DARK TOGGLE ARE STRUCK from the band (2026-09-25,
+// at the user's word): the middle is the stamp's.
+const STAMP = (() => {
+  const svg = fs.readFileSync(path.join(__dirname, 'assets', 'stamp.svg'), 'utf8');
+  const viewBox = (svg.match(/viewBox="([^"]+)"/) || [])[1] || '0 0 1 1';
+  const inner = svg.replace(/^[\s\S]*?<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '').trim();
+  return { viewBox, inner };
+})();
+// THE STAMP IN THE NAME (2026-10-01, at the user's word): the swallow
+// traced from the print, cut out of its straight-edged 4.5:5 block
+// (assets/bird-stamp.svg, one even-odd path). It stands after CRITIC
+// in THE LAST MAGAZINE stack's place — the words themselves are gone
+// ("Remove The Last Magazine altogether") — the capitals' height, cap
+// top to baseline, 36 from the name's ink and the window's edge
+// (fitMastheadFill, band-mark.js). The block prints in currentColor, the stack's ink; the
+// bird is a hole, so it is always the ground the masthead stands on —
+// white on the light page, charcoal on the dark.
+// (THE STAMP PRINTED, 2026-10-01, at the user's word — "add a thin
+// texture and border around the stamp ... white border then another
+// black border", "almost smooth to the site when smaller": the drawing's
+// outer edge is a thin line of the ink, then a gap of the ground as wide
+// as the line ("white and black outer border should be same size"),
+// then the block, all inside the box the block had, so the stamp keeps
+// its seat; a filter in the drawing roughens every edge by a unit or so,
+// and the ink is otherwise pure ("no texture inside") but for five
+// specks of the ground cut in by hand, each one of the bird's own speck
+// shapes, set in the clear ground away from the bird ("specks should be
+// as big as the ones in the bird, and there should only be 5"). One
+// id, one stamp.)
+// (TURNED OVER, 2026-10-02: "Flip the stamp so that on dark, background
+// is dark and bird is white"; "Inverse for light" — the outer line and
+// gap are struck, the block takes the page's ground and an ink layer
+// under it shows through the bird and the specks: style.css, THE STAMP
+// TURNED OVER)
+// (THE BIRD ALONE, 2026-10-02: "separate bird from stamp background
+// altogether" — the drawing is the swallow only, cropped to its ink, with
+// two of the fifteen specks by it; the other thirteen are in the name's
+// words: style.css, THE BIRD ALONE)
+const BIRD_STAMP = (() => {
+  const svg = fs.readFileSync(path.join(__dirname, 'assets', 'bird-stamp.svg'), 'utf8').trim();
+  return svg.replace(/^<svg xmlns="[^"]*"/, '<svg class="wm-bird" aria-hidden="true" focusable="false"');
+})();
+// THE NAME IN THE KOSUTH COVER'S LETTERING (2026-10-02, at the user's
+// word — "Use it as the wordmark, making the ink 5% thinner"): the
+// masthead's THE NEW CRITIC is three vector words, each traced from the
+// printed lettering (Avenir Next Heavy at 93.5% width, tracked in, its
+// edges roughened and worn), the ink thinner than the poster files' —
+// 5% at first, then 10% again ("Make ink another 10% thinner"): the
+// stems 85.6 of the field's 300-pixel cap where they were 100. Each
+// word's box is its ink across and the flat cap to the baseline down —
+// the round letters overshoot it, as they are drawn to — so the fitter
+// reads the name's ink off the boxes. The ink is currentColor, so the
+// name keeps the theme's colour and its hover.
+const WORDMARK_CAP_EM = 0.708; // the words' cap, in the name's em (Avenir Next's own)
+// (widthEm: the word set to a width rather than to the cap — THE NAME
+// STACKED, where the four words stand at one width and each takes the
+// cap that width gives it)
+// (ONE CAP FOR ALL FOUR, 2026-10-04, at the user's word — "THE NEW and
+// CRITIC should be same heights": the stacked words are set to the one cap,
+// each as wide as its letters make it, where each was set to a width)
+function wordmarkWord(word, widthEm = 0) {
+  const svg = WORDMARK_WORDS[word];
+  const vb = (svg.match(/viewBox="([^"]+)"/) || [])[1].split(/\s+/).map(Number);
+  const w = widthEm ? widthEm.toFixed(4) : (WORDMARK_CAP_EM * vb[2] / vb[3]).toFixed(4);
+  const h = widthEm ? (widthEm * vb[3] / vb[2]).toFixed(4) : WORDMARK_CAP_EM;
+  // (the round letters' dip under the baseline, as a share of the cap:
+  // the fitter keeps the masthead's block open to it, so the Cs' bowls
+  // are not shaved flat on the baseline — "The bottom of the cs in
+  // Critic look cut off")
+  // (a drawing with curves states its own dip — its arcs bottom out between
+  // their end points — as data-dip on the svg; a traced one is read off its
+  // points: THE LETTERS REDRAWN UPRIGHT, 2026-10-04)
+  const stated = svg.match(/^<svg[^>]* data-dip="([\d.]+)"/);
+  const nums = stated ? [] : ((svg.match(/ d="([^"]+)"/) || [])[1] || '').match(/-?[\d.]+/g) || [];
+  let maxY = vb[1] + vb[3];
+  for (let i = 1; i < nums.length; i += 2) maxY = Math.max(maxY, +nums[i]);
+  const dip = stated ? (+stated[1]).toFixed(4) : ((maxY - (vb[1] + vb[3])) / vb[3]).toFixed(4);
+  return svg.replace(/ data-dip="[\d.]+"/, '').replace(/^<svg xmlns="[^"]*"/,
+    `<svg class="tn-svg" aria-hidden="true" focusable="false" data-dip="${dip}" style="width:${w}em;height:${h}em"`);
+}
+// THE NAME IN THE BAND, TWO LINES AND THE BIRD (2026-10-04, at the user's
+// word — "I want to see the wordmark as THENEW/CRITIC as two stacks with
+// bird to the right"): where the page opens on the band, the band carries
+// the name itself — THE NEW over CRITIC, ranged left on the 72 margin, the
+// bird to their right — drawn at the band's own size (style.css, THE NAME
+// IN THE BAND). Each line is its drawing at a cap of 1em, as wide as its
+// letters make it; the bird is the masthead's own, its filter's id its own.
+function bandWord(word) {
+  const svg = WORDMARK_WORDS[word];
+  const vb = (svg.match(/viewBox="([^"]+)"/) || [])[1].split(/\s+/).map(Number);
+  return svg.replace(/ data-dip="[\d.]+"/, '').replace(/^<svg xmlns="[^"]*"/,
+    `<svg class="band-logo__line" aria-hidden="true" focusable="false" style="width:${(vb[2] / vb[3]).toFixed(4)}em;height:1em"`);
+}
+// THE COLOPHON'S NAME ACROSS (2026-10-06 — "Why is Critic in the Colophon
+// smaller than THE NEW?"): the colophon sets the whole name — the bird
+// (1.66 caps tall at 4.5:5, so 1.494 across), THE, NEW and CRITIC, 0.6226
+// of a cap apart — to the window's width, so its size is the width over
+// how many caps wide the name is. That count was written into style.css
+// (14.378) and went stale when the drawing widened: the row overran, the
+// grid squeezed CRITIC's column and its drawing shrank to fit. It is now
+// read off the drawing and stated on :root as --colo-span.
+const COLO_SPAN = (() => {
+  const capsAcross = (w) => {
+    const vb = WORDMARK_WORDS[w].match(/viewBox="([^"]+)"/)[1].split(/\s+/).map(Number);
+    return vb[2] / vb[3];
+  };
+  return (1.66 * 4.5 / 5 + 3 * 0.6226 + capsAcross('the') + capsAcross('new') + capsAcross('critic')).toFixed(4);
+})();
+// The band's bird in a 4.5:5 outline ("put bird in 4.5:5 outline matching
+// the roughness of the bird"): a rectangle drawn inside the bird's own
+// filter group, so the same turbulence roughens its edges. In the bird's
+// units: its box is 323.28 × 340.76 about (224.99, 250); the outline's
+// stroke is 12, 30 clear of the bird at the sides, and its outer edge
+// stands 4.5 wide to 5 tall.
+const BAND_FRAME = (() => {
+  const cx = 63.35 + 323.28 / 2, cy = 79.62 + 340.76 / 2, sw = 12;
+  const wo = 323.28 + 2 * (30 + sw), ho = wo * 5 / 4.5;
+  const r = n => +n.toFixed(2);
+  return { sw, wo: r(wo), ho: r(ho), x: r(cx - wo / 2), y: r(cy - ho / 2), cx, cy };
+})();
+function bandLogoHtml(id = 'band', cls = '') {
+  const F = BAND_FRAME;
+  const rect = `<rect class="band-logo__frame" x="${+(F.x + F.sw / 2).toFixed(2)}" y="${+(F.y + F.sw / 2).toFixed(2)}" width="${+(F.wo - F.sw).toFixed(2)}" height="${+(F.ho - F.sw).toFixed(2)}" fill="none" stroke="currentColor" stroke-width="${F.sw}"/>`;
+  const bird = BIRD_STAMP.replace(/wm-stamp-ink/g, `wm-stamp-ink-${id}`).replace('class="wm-bird"', 'class="band-logo__bird"')
+    .replace(/viewBox="[^"]*"/, `viewBox="${F.x} ${F.y} ${F.wo} ${F.ho}"`)
+    .replace(new RegExp(`(<filter id="wm-stamp-ink-${id}" filterUnits="userSpaceOnUse") x="[^"]*" y="[^"]*" width="[^"]*" height="[^"]*"`), `$1 x="${F.x - 10}" y="${F.y - 10}" width="${F.wo + 20}" height="${F.ho + 20}"`)
+    .replace(new RegExp(`(<g filter="url\\(#wm-stamp-ink-${id}\\)">)`), `$1${rect}`);
+  if (!bird.includes('band-logo__frame') || !bird.includes(`x="${F.x - 10}"`)) throw new Error('band frame: bird SVG did not take the outline');
+  return `<a class="band-logo${cls ? ' ' + cls : ''}" href="#top" aria-label="The New Critic — to the top of the front page"><span class="band-logo__top">${bandWord('the')}</span><span class="band-logo__mid">${bandWord('new')}</span>${bird}<span class="band-logo__low">${bandWord('critic')}</span></a>`;
+}
+function renderStampDefs() {
+  return `<svg class="nc-stamp-defs" aria-hidden="true" focusable="false" width="0" height="0"><symbol id="nc-stamp" viewBox="${STAMP.viewBox}">${STAMP.inner}</symbol></svg>`;
+}
+function stampHtml(cls) {
+  return `<svg class="nc-stamp ${cls}" viewBox="${STAMP.viewBox}" aria-hidden="true" focusable="false"><use href="#nc-stamp"/></svg>`;
+}
+// PICTURE SIZES SET BY HAND (2026-09-24): the edit mode (?edit on the
+// front page, src/edit-mode.js) drags a picture's corner and saves the
+// size here through the dev server (serve.js, PUT /__layout), keyed by
+// post slug: w, the picture's width as a share of the window's, r, its
+// height over its width, x (when a left corner was moved), its left
+// edge as a share of the window's width, and dy (when it was dragged
+// down or up), an offset from its seat as a share of the window's width. From 1024 up they override the kinds'
+// sizes (style.css, SIZES SET BY HAND); the phone keeps its own.
+let LAYOUT_OVERRIDES = {};
+try { LAYOUT_OVERRIDES = JSON.parse(fs.readFileSync(path.join(__dirname, 'layout-overrides.json'), 'utf8')) || {}; } catch (e) {}
 
 // Stamped into the stylesheet link — browsers cache the un-versioned
 // style.css hard, and every design pass was needing a manual hard
@@ -24,7 +182,7 @@ const BUILD_STAMP = crypto.createHash('sha1')
   .digest('hex').slice(0, 8);
 const FEED_URL = 'https://www.thenewcritic.com/feed';
 const SITE_NAME = 'The New Critic';
-const SITE_TAGLINE = 'The Young American Magazine';
+const SITE_TAGLINE = 'The Last Magazine';
 const SITE_URL = 'https://www.thenewcritic.com';
 // Where THIS build is served: the apex domain, routed to the gh-pages
 // deploy by cloudflare/worker.js. Social cards need absolute URLs, and
@@ -102,10 +260,18 @@ function applyContentOverrides(posts) {
     if (o.date) p.metaDate = o.date;
     if (o.kicker) p.kicker = o.kicker;
     if (o.focal) p.focal = o.focal;
+    if (o.head) p.head = o.head;
+    if (o.zoom) p.zoom = o.zoom;
+    if (o.mat) p.mat = o.mat;
     // The interview subject's display name — locked, so the dek
     // parser (applyDekBylines, which runs after) can't overwrite it
     // with whatever alias the feed's dek used.
     if (o.psName) { p.psName = o.psName; p.psNameLocked = true; }
+    // byline: the name the CARD shows, locked against applyDekBylines —
+    // which runs after this and would otherwise take the byline from
+    // the dek's subject as written there ("14-year-old Eli Goldfine on
+    // …" gave the card "14-YEAR-OLD ELI GOLDFINE"; 2026-10-01)
+    if (o.byline) { p.displayAuthor = o.byline; p.bylineLocked = true; }
     if (o.preview) {
       const paras = Array.isArray(o.preview) ? o.preview : [o.preview];
       p.preview = paras[0];
@@ -192,7 +358,7 @@ function applyDekBylines(posts) {
         // displayAuthor, not author: the author field still holds the
         // interviewer, which is the true byline of the piece and what any
         // non-panel use of the post should keep seeing.
-        p.displayAuthor = names.length > 1 ? `${names[0]} et al.` : names[0];
+        if (!p.bylineLocked) p.displayAuthor = names.length > 1 ? `${names[0]} et al.` : names[0];
         // The full subject name(s), unabbreviated — the postscript
         // page's index scroll lists every interviewee by name (see
         // renderPostscriptPage). Serial style: commas between the
@@ -218,14 +384,15 @@ function applyDekBylines(posts) {
       continue;
     }
 
-    // "<Reviewer> contra <Work>" → "contra <Work>". Gated on the prefix
+    // "<Reviewer> contra <Work>" → "Contra <Work>" (with its capital
+    // since 2026-09-24; lowered before). Gated on the prefix
     // reading as a NAME rather than on the word "contra" alone, so an
     // essay dek that happens to use it in a sentence is left be. Matching
     // the prefix against post.author is too strict on its own — one
     // review's author field is "Nadav" where its dek says "Nadav Asal".
     const con = p.subtitle.match(/^(.+?)\s+contra\s+(.+)$/i);
     if (con && looksLikeName(con[1])) {
-      p.subtitle = `contra ${con[2]}`;
+      p.subtitle = `Contra ${con[2]}`;
       continue;
     }
 
@@ -234,7 +401,7 @@ function applyDekBylines(posts) {
     // in front of it for the branch above to strip.
     p.subtitle = p.subtitle
       .replace(POSTSCRIPT_DEK_PREFIX, '')
-      .replace(/^Contra\s+/, 'contra ');
+      .replace(/^contra\s+/i, 'Contra ');
   }
 }
 
@@ -269,9 +436,9 @@ const SITE_LINKS = [
   // navLink in renderNav; the sidebar's own permanent gloss replaced About's
   // copy of it there). A newline is a HARD break where it's rendered —
   // these are set to specific line shapes, not left to wrap.
-  { key: 'essays', label: 'Essays', href: 'essays.html' },
-  { key: 'postscript', label: 'Postscript', href: 'postscript.html', dek: 'Interviews w/\nextraordinary gen zers' },
-  { key: 'contra', label: 'Contra', href: 'contra.html', dek: 'New Critics take on\nsignificant gen z works' },
+  { key: 'essays', label: 'Essays', href: 'archive.html#section=essays' },
+  { key: 'postscript', label: 'Postscript', href: 'archive.html#section=postscript', dek: 'Interviews w/\nextraordinary gen zers' },
+  { key: 'contra', label: 'Contra', href: 'archive.html#section=contra', dek: 'New Critics take on\nsignificant gen z works' },
   { key: 'archive', label: 'Archive', href: 'archive.html' },
   { key: 'about', label: 'About', href: 'about.html', dek: 'The Young\nAmerican Magazine' },
 ];
@@ -490,8 +657,85 @@ function escapeHtml(str) {
 // off-center (common in tall 1:2 portrait crops). A post's `focal` override
 // (see content-overrides.js) sets object-position directly, e.g. 'center 20%'
 // to keep a face nearer the top of the frame.
-function focalStyle(post) {
-  return post.focal ? ` style="object-position: ${escapeHtml(post.focal)}"` : '';
+function focalStyle(post, frame) {
+  if (post.focal) return ` style="object-position: ${escapeHtml(post.focal)}"`;
+  if (!post.head) return '';
+  const c = headCrop(post, frame, { transform: true });
+  if (!c) return ` style="object-position: ${(post.head[0] * 100).toFixed(1)}% ${(post.head[1] * 100).toFixed(1)}%"`;
+  // The zoom is a transform, pivoting on the point that lands the head
+  // in the middle. The cover lets its overflow show (the title column
+  // reaches past it), so the picture clips itself: the clip is drawn
+  // before the transform and scaled with it, so it is cut short by the
+  // zoom and grows back to exactly the frame's edges.
+  if (c.zoom === 1) return ` style="object-position: ${c.x}% 50%"`;
+  const k = (1 - 1 / c.zoom) * 100;
+  const cut = (v) => +v.toFixed(2) + '%';
+  const clip = `inset(${cut(c.y / 100 * k)} ${cut((1 - c.ox / 100) * k)} ${cut((1 - c.y / 100) * k)} ${cut(c.ox / 100 * k)})`;
+  return ` style="object-position: ${c.x}% 50%; --cover-zoom: ${c.zoom}; --cover-zoom-o: ${c.ox}% ${c.y}%; --cover-zoom-clip: ${clip}"`;
+}
+
+// THE HEAD IN THE MIDDLE (2026-09-23): a postscript cover's `head`
+// override is where the sitter's head is centred in the drawing, as
+// fractions of its width and height ([x, y]; see content-overrides.js).
+// A postscript frame is always narrower than its drawing, so the
+// drawing fills the frame's height and only slides sideways; a head
+// that stands high or low is brought to the middle by zooming in just
+// far enough that the drawing's top (or bottom) edge can meet the
+// frame's. The sideways slide is worked out for the frame's shape —
+// width over height, measured at 1440 (it ranges about ±0.06 from 1280
+// to 1920, which moves a head by a few pixels at most):
+//   the box at rest (the title's ::before, painted with --swap-img) —
+//     0.70 in the latest row, a column (384) on the card's height
+//     (551), and 0.49 in a pair, a column of the pairs' four (270),
+//     since the postscripts turned portrait (2026-09-23);
+//   the <img> shown when a preview opens — 0.71 and 0.53.
+const PS_FRAMES = {
+  latest: { box: 0.70, img: 0.71 },
+  pair: { box: 0.49, img: 0.53 },
+};
+// The box at rest zooms by sizing its background, so its slide is taken
+// on the zoomed drawing; the <img> zooms by a transform AFTER
+// object-fit has cropped it (`transform`), so its slide is taken on the
+// drawing as fitted and the transform pivots (ox, as a fraction of the
+// frame's width) on the point that carries the head to the middle.
+function headCrop(post, frame, { transform = false } = {}) {
+  const m = frame && post.head && /_(\d+)x(\d+)\.\w+$/.exec(decodeURIComponent(post.image || ''));
+  if (!m) return null;
+  const aspect = m[1] / m[2];
+  const [hx, hy] = post.head;
+  // A post's own `zoom` overrides the one that just brings the head to
+  // the middle: over 1 it crops in, under 1 it stands the drawing back
+  // from the frame's edges on a mat (`mat`, the box's ground) to give
+  // the head air — the <img> stops at 1 (it would show the cover behind
+  // it), which costs nothing: it stays hidden while the box is shown.
+  let zoom = post.zoom || (hy < 0.5 ? 0.5 / hy : 0.5 / (1 - hy));
+  if (!post.zoom && zoom < 1.05) zoom = 1;
+  if (transform) zoom = Math.max(1, zoom);
+  const clamp = (v) => Math.min(1, Math.max(0, v));
+  // where along its slack the drawing stands for the head to sit in the
+  // middle, the slack being overhang (drawing bigger) or mat (smaller)
+  const slide = (size, box, at) => (size === box ? 0.5 : clamp((size * at - box / 2) / (size - box)));
+  const w = transform ? aspect : aspect * zoom; // the drawing's width, in frame heights
+  const x = slide(w, frame, hx);
+  const y = transform || zoom === 1 ? 0.5 : slide(zoom, 1, hy);
+  const f = w > frame ? (w * hx - x * (w - frame)) / frame : 0.5; // the head across the frame, before the transform
+  const ox = zoom === 1 ? 0.5 : clamp((zoom * f - 0.5) / (zoom - 1));
+  return {
+    x: +(x * 100).toFixed(1),
+    y: transform && zoom > 1 ? (hy < 0.5 ? 0 : 100) : +(y * 100).toFixed(1),
+    ox: +(ox * 100).toFixed(1),
+    zoom: +zoom.toFixed(3),
+  };
+}
+// The box at rest reads its crop off the title (the ::before inherits
+// it), which beats the --swap-pos the fitter copies onto the card from
+// the <img>, whose frame is a different shape.
+function headBoxStyle(post, frame) {
+  const c = headCrop(post, frame);
+  if (!c) return '';
+  const size = c.zoom !== 1 ? `; --swap-size: auto ${+(c.zoom * 100).toFixed(1)}%` : '';
+  const mat = c.zoom < 1 && post.mat ? `; --swap-mat: ${escapeHtml(post.mat)}` : '';
+  return ` style="--swap-pos: ${c.x}% ${c.y}%${size}${mat}"`;
 }
 
 // Every feed cover routes through substackcdn.com/image/fetch/<params>/<src>,
@@ -530,8 +774,42 @@ const COVER_SIZES = {
   // beats threading exact row geometry down into renderDuoHalf.
   wide: '(max-width: 720px) 100vw, 60vw',
   cell: '(max-width: 720px) 100vw, 40vw',
+  // MEASURED, NOT ESTIMATED (2026-09-21). Every latest cell said 40vw
+  // and none of them is: read off the rendered page at 1280, 1440 and
+  // 1920, a postscript or review cell in a latest row stands at 27.1 to
+  // 29.8vw, a review in a trio at 25.8 to 28.3, and a postscript in a
+  // pair at 20.8 to 22.2. A browser believes what it is told, so on a
+  // retina laptop (1440 at 2x) 40vw asked for 1152 device pixels and
+  // took the 1200 candidate for a picture drawn 412 wide — where 30vw
+  // asks for 864 and the pair's 23vw for 662, which is the 800. Fourteen
+  // of the front page's twenty-three covers came down at 1200 for it.
+  // The wide cell's 60vw is right (56 to 59.6 measured) and stands.
+  third: '(max-width: 720px) 100vw, 30vw',
+  pair: '(max-width: 720px) 100vw, 23vw',
 };
+// THE COVER IS CROPPED TO ITS BOX, AND THE CROP NEEDS PIXELS (2026-09-22).
+// A postscript's box is tall — 412 by 577 at 1440, a pair's 306 by 577 —
+// and the artwork is object-fit: cover, so a landscape original is
+// scaled to the box's HEIGHT and most of its width is cut away. The
+// browser sizes its pick by the width `sizes` states, which was the
+// box's: a 1456x1092 original in a pair cell took the 800 candidate
+// (800x600) for a box 1154 device pixels tall, and came up soft. The
+// original's own proportions are in its file name (_WxH); where they
+// are wider than the box's, the width asked for grows by the ratio.
+const COVER_BOX_ASPECT = { wide: 1.43, cell: 1.0, third: 0.714, pair: 0.53 };
+function cropAwareSizes(url, sizes) {
+  const key = Object.keys(COVER_SIZES).find((k) => COVER_SIZES[k] === sizes);
+  const box = key && COVER_BOX_ASPECT[key];
+  const m = /_(\d+)x(\d+)\.[a-z]+/i.exec(url || '');
+  const vw = /,\s*(\d+)vw$/.exec(sizes);
+  if (!box || !m || !vw) return sizes;
+  const img = +m[1] / +m[2];
+  if (!(img > box)) return sizes;
+  const need = Math.min(100, Math.ceil(+vw[1] * (img / box)));
+  return sizes.replace(/,\s*\d+vw$/, `, ${need}vw`);
+}
 function coverSrcAttrs(url, sizes, { preload = false } = {}) {
+  sizes = cropAwareSizes(url, sizes);
   const variants = [480, 800, 1200, 1600].map((w) => ({ v: cdnVariant(url, w), w }));
   if (variants.some(({ v }) => !v)) {
     return preload ? `href="${escapeHtml(url)}"` : `src="${escapeHtml(url)}"`;
@@ -711,8 +989,10 @@ const BIO_PATTERNS = [
   // between the byline bio and the review's opening line — so no run
   // filter sees it: "New Critic paid subscribers get access to Postscript,
   // our interview series, Contra, our criticism section, and exclusive New
-  // Critic parties for only $30 a year."
-  /^[^.!?]{0,60}\bpaid subscribers get access\b/i,
+  // Critic parties for only $30 a year." (and without "access", on the
+  // essays since 2026-09: "New Critic paid subscribers get Postscript,
+  // our interview series, … for $30 a year.")
+  /^[^.!?]{0,60}\bpaid subscribers get\b/i,
   // "If you read The New Critic and take delight or solace in our project,
   // please consider a paid subscription to this flesh-and-blood gen z
   // magazine." — the plea's closing paragraph, phrased sentence-first.
@@ -1118,7 +1398,11 @@ function railLinks(currentKey = 'home') {
 
 function renderNav(currentKey = 'home') {
   const links = railLinks(currentKey);
+  // (The masthead's wordmark no longer carries this: it is not a link
+   // any more, and aria-current on a thing that goes nowhere says
+   // nothing. Kept declared against its return.)
   const homeCurrent = currentKey === 'home' ? ' aria-current="page"' : '';
+  void homeCurrent;
   // The masthead IS the brand — the framed-bird mark that used to sit
   // above it is gone, so the name carries the home link itself. It sets
   // on ONE line in the rail's small courier now, which is why it's a
@@ -1147,8 +1431,8 @@ function renderNav(currentKey = 'home') {
   // on ONE line across the top, then the section list spread between
   // two rules (see THE TOP HEADER in style.css).
   return `<nav class="site-nav site-nav--top">
-  <a class="wordmark topbar-wordmark" href="./"${homeCurrent} aria-label="The New Critic — home">
-    <span class="topbar-name">The <span class="tn-new">New</span> Critic</span>
+  <a class="wordmark topbar-wordmark" href="${currentKey === 'home' ? '#top' : './#top'}" aria-label="The New Critic — to the top of the front page">
+    <span class="topbar-name tn-stacked"><span class="tn-col tn-col--l"><span class="tn-the">${wordmarkWord('the')}</span><span class="tn-new">${wordmarkWord('new')}</span></span><span class="tn-gap0" aria-hidden="true"></span><span class="tn-gap" aria-hidden="true"></span><span class="tn-col tn-col--r tn-critic"><span class="tn-cri">${wordmarkWord('cri')}</span><span class="tn-tic">${wordmarkWord('tic')}</span></span></span>
   </a>
   ${currentKey === 'home'
     // MOVEMENT ONE'S RAIL IS A TRACK LIKE THE REST. It used to be the
@@ -1195,15 +1479,31 @@ const SECTION_BANDS = {
   postscript: { word: 'Postscript', href: 'archive.html#section=postscript' },
   contra: { word: 'Contra', href: 'archive.html#section=contra' },
 };
+// THE COMMAS ARE ELEMENTS NOW (2026-09-19). A run of band links was
+// joined with a bare ', ', which makes every comma a TEXT NODE — and a
+// text node cannot be reached by a selector. It had to be, because a
+// link carrying a highlight block carries the comma beside it onto
+// that block (the block clears the word by --hl-pad either side, which
+// at this size is more than the space before the comma), and a
+// charcoal comma on a charcoal block reads as a nick out of the mark.
+// Each separator is its own span, so the ones beside a marked word can
+// take the block's own ink. The character and the space are unchanged.
+const BAND_SEP = '<span class="band-sep">, </span>';
 function bandDeks(m) {
   if (m === 'latest') {
     const by = (key) => SITE_LINKS.find((l) => l.key === key);
     const a = (l) => l ? `<a href="${escapeHtml(l.href)}"${l.href.startsWith('http') ? ' rel="noopener"' : ''}>${escapeHtml(l.label)}</a>` : '';
-    return [a(by('archive')), a(by('about')), '<span class="nav-links-dead">Store</span>', '<span class="nav-links-dead">Events</span>',
-      `<a href="${SITE_URL}/subscribe" rel="noopener">Subscribe</a>`].filter(Boolean).join(', ');
+    // (SUBSCRIBE is struck from the band, 2026-09-25, at the user's
+    // word: the ticker under the band carries it)
+    // THE LAST MAGAZINE, ARCHIVE, EVENTS, STORE (2026-09-30, at the
+    // user's word): the magazine's line is the About link now, first,
+    // and the list stands centred in the band (style.css)
+    const about = by('about');
+    const tlm = about ? a({ ...about, label: 'The Last Magazine' }) : '';
+    return [tlm, a(by('archive')), '<span class="nav-links-dead">Events</span>', '<span class="nav-links-dead">Store</span>'].filter(Boolean).join(BAND_SEP);
   }
   const list = m === 'contra' ? CONTRA_CATEGORIES : RAIL_CATEGORIES;
-  return list.map((c) => `<a href="archive.html#topic=${encodeURIComponent(c.toLowerCase())}">${escapeHtml(c)}</a>`).join(', ');
+  return list.map((c) => `<a href="archive.html#topic=${encodeURIComponent(c.toLowerCase())}">${escapeHtml(c)}</a>`).join(BAND_SEP);
 }
 // THE MASTHEAD LINE RIDES IN THE BAND'S MIDDLE — the magazine line and
 // the date, centred between the mark and the list. The fixed line under
@@ -1213,8 +1513,11 @@ function bandDeks(m) {
 function bandDate() {
   return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 }
+// (THE DATE STOOD IN A SEAM for a day, 2026-09-22: a 36 band of
+// charcoal of its own under the head band. It is back in the band's
+// middle, 2026-09-23, and the seam is struck — renderSectionBand.)
 function mastheadLine() {
-  return `<a href="./">The Young American Magazine</a>
+  return `<a href="./">The Last Magazine</a>
       <span>${bandDate()}</span>`;
 }
 // EVERY BAND READS IN THREE SLOTS, and the same three everywhere:
@@ -1234,7 +1537,18 @@ function mastheadLine() {
 function bandName(html) {
   return `<p class="band-deks band-name">${html}</p>`;
 }
-const TYAM_LINK = '<a href="./">The Young American Magazine</a>';
+// THE NAME IS NOT A WAY ANYWHERE, EXCEPT IN THE BAND (2026-09-19).
+// The masthead's wordmark and the reprint at the foot gave up both
+// their link and their answer to the hand: they are the magazine's
+// name over and under its pages, not an offer, and the reader holding
+// them is already here. They keep the <a> so every rule and every
+// measurement that names one still finds it — an anchor with no href
+// is not a link: no pointer, no click, and out of the tab order too,
+// which `pointer-events: none` alone would not have managed.
+// THE BAND'S NAMES DO LINK, and to the TOP of the front page (#top is
+// the id on .page-rows), since the band is the one place the name is
+// furniture a reader steers by rather than a masthead.
+const TYAM_LINK = '<a href="./#top">The Last Magazine</a>';
 // The section's own line, in the courier at the right.
 const BAND_LINES = {
   essays: 'The Greatest Writing on Gen Z',
@@ -1247,12 +1561,16 @@ const SEE_ALL = { essays: 'All Essays', postscript: 'All Interviews', contra: 'A
 // The word pages (renderWordPage) take the masthead's band too, with
 // their own line in the middle slot in place of the date (mid) and
 // their own link among the right slot's marked current (currentKey).
-// THE SOCIAL STACK (2026-09-17): Substack, Instagram and Email as
-// marks in the LEFT margin, the toggle's mirror — three 13px marks
-// drawn in the ink with a dash between each, fixed at the viewport's
-// centre (style.css, .social-stack; the dashes are seated by ink with
-// the toggle's lines, fitToggle). Each mark is its own link and takes
-// the highlight under the pointer.
+// THE SOCIAL STACK IS STRUCK FROM THE MARGIN (2026-09-18). Substack,
+// Instagram, X and Email stood as four 13px marks in the LEFT margin,
+// the toggle's mirror, fixed at the viewport's centre. The margin is
+// bare now — the toggle keeps the right on its own — and the four
+// names read in words in the colophon at the foot instead, where the
+// X has joined them. renderSocialStack and its marks are kept below,
+// unused, against a return. The dashes that stood between them are struck
+// (later on 2026-09-17): the marks stand a dash's line apart, 13, on
+// the stack's own gap. Each mark is its own link and takes the
+// highlight under the pointer.
 // THE MARGINALIA (2026-09-17): the toggle and its field in the right
 // margin, the social marks in the left — fixed to the viewport, and
 // standing as a direct child of <main> rather than inside the band:
@@ -1263,29 +1581,168 @@ const SEE_ALL = { essays: 'All Essays', postscript: 'All Interviews', contra: 'A
 // stand over every row of the page.
 function renderMarginalia() {
   return `<div class="marginalia">
-  <button type="button" class="theme-toggle" aria-label="Light, dark, or a colour of your own"><span class="theme-toggle-light">Light</span><span class="theme-toggle-sep" aria-hidden="true">—</span><span class="theme-toggle-dark">Dark</span><span class="theme-toggle-sep" aria-hidden="true">—</span><span class="theme-toggle-hex">Hex</span></button><input class="theme-hex" type="text" maxlength="7" placeholder="#" aria-label="Ground colour, as a hex code" autocomplete="off" autocapitalize="off" spellcheck="false" hidden>
-  ${renderSocialStack()}
+  <button type="button" class="theme-toggle" aria-label="Light or dark, and a highlight colour of your own"><span class="theme-toggle-light">Light</span><span class="theme-toggle-sep" aria-hidden="true">·</span><span class="theme-toggle-dark">Dark</span><span class="theme-toggle-sep" aria-hidden="true">·</span><span class="theme-toggle-hex">Hex</span></button><input class="theme-hex" type="text" maxlength="7" placeholder="#" aria-label="Highlight colour, as a hex code" autocomplete="off" autocapitalize="off" spellcheck="false" hidden>
   </div>`;
 }
 function renderSocialStack() {
   const substack = '<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false"><path d="M2 2.5h20M2 7.5h20M2 12.5h20v9l-10-5.5L2 21.5v-9z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>';
   const instagram = '<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false"><rect x="2" y="2" width="20" height="20" rx="5.5" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="12" cy="12" r="4.6" fill="none" stroke="currentColor" stroke-width="2.2"/><circle cx="17.6" cy="6.4" r="1.4" fill="currentColor"/></svg>';
+  // X (2026-09-18): the mark's own silhouette, filled in the ink rather
+  // than drawn in strokes like the three beside it — the letter is the
+  // logo, and two crossed strokes would read as a close button. Its
+  // bars run about 2.6 of the 24 wide against the others' 2.2, so it
+  // stands with them at 13 without a rule of its own.
+  const x = '<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false"><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.153h7.594l5.243 6.932zM17.61 20.644h2.039L6.486 3.24H4.298z" fill="currentColor"/></svg>';
   const email = '<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false"><rect x="1.5" y="4" width="21" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M2.5 6.5 12 13.5l9.5-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/></svg>';
-  const sep = '<span class="social-stack-sep" aria-hidden="true">—</span>';
-  return `<span class="social-stack"><a href="https://www.thenewcritic.com" rel="noopener" aria-label="Substack">${substack}</a>${sep}<a href="https://www.instagram.com/thenewcritic" rel="noopener" aria-label="Instagram">${instagram}</a>${sep}<a href="mailto:editors@thenewcritic.com" aria-label="Email">${email}</a></span>`;
+  const sep = '';
+  return `<span class="social-stack"><a href="https://www.thenewcritic.com" rel="noopener" aria-label="Substack">${substack}</a>${sep}<a href="https://www.instagram.com/thenewcritic" rel="noopener" aria-label="Instagram">${instagram}</a>${sep}<a href="https://x.com/thenewcritic" rel="noopener" aria-label="X">${x}</a>${sep}<a href="mailto:editors@thenewcritic.com" aria-label="Email">${email}</a></span>`;
 }
-function renderSectionBand(m, { mid = '', currentKey = '' } = {}) {
+// THE MIDDLE SLOT IS EMPTY ON THE WORD PAGES (2026-09-19). The
+// magazine's name stood a second time in the band's middle there —
+// THE NEW CRITIC in miniature between The Last Magazine (the Young American Magazine till 2026-09-30) and
+// the list of links, sized off the reprint's fit — and it was never
+// optically centred in the band it stood in: 31.8 of air over its
+// caps against 15.4 under its baseline, the band's own box centred
+// rather than the ink inside it. It is struck rather than seated. The
+// name is already on the page in full at the head and again at the
+// foot; a third setting of it, in the one place it could not be made
+// to sit straight, was the one the page could spare. (bareMid: the
+// slot is rendered and left blank, so the three columns keep their
+// stations — the date does NOT come back in its place, which would be
+// a substitution rather than a removal.)
+// THE SUBSCRIBE TICKER (2026-09-23): a 36 strip of the mark's blue under
+// the head band at the page's head — scrolling up under the band once
+// it pins — and again over the colophon at the foot, running SUBSCRIBE and a
+// line of the pitch, SUBSCRIBE and the other line, round and round —
+// the whole strip one link to the subscribe page. The run is two equal
+// halves so it can loop by sliding one half's width (style.css, THE
+// SUBSCRIBE TICKER). Neither first nor last in the band: the sheet
+// seats the band's slots by :first-child and :last-child.
+// (as HTML: the price is set bold in the ticker as in the corner box —
+// style.css, THE TICKER'S PRICE IS BOLD, 2026-09-24)
+function tickerLines() { return [
+  escapeHtml('Sign up for our free newsletter, or become a paid subscriber.'),
+  `For <strong class="sub-ticker-price">${escapeHtml(SUBSCRIBE_PITCH_PARTS[1])}</strong>${escapeHtml(', hundreds of paid readers get access to Postscript, our interview series; Contra, our criticism section; and exclusive New Critic parties.')}`,
+]; }
+function subTicker(where = 'head') {
+  // ONE SUBSCRIBE, STILL (2026-09-24, at the user's word): the pitch
+  // lines are off the strip and it no longer runs — the one word
+  // stands at its centre (style.css, ONE SUBSCRIBE IN THE MIDDLE).
+  // (tickerLines is left, unused, should the pitch come back.)
+  const half = '<span class="sub-ticker-half"><b>Subscribe</b></span>';
+  return `<a class="sub-ticker sub-ticker--${where}" href="${SITE_URL}/subscribe" rel="noopener" aria-label="Subscribe to The New Critic"><span class="sub-ticker-run" aria-hidden="true">${half}</span></a>`;
+}
+
+// THE SITE'S LINKS RIDE IN THE SUBSCRIBE STRIP (2026-09-30, at the
+// user's word): ARCHIVE, ABOUT, SUBSCRIBE, STORE, EVENTS in the strip's
+// own capitals, spread evenly across it (style.css, THE LINKS IN THE
+// STRIP); STORE and EVENTS lead nowhere yet, as in the band they left
+// THE CIRCLE (2026-10-01, at the user's word): one circle, the strip's
+// last thing at its right (held in the window's bottom right corner for
+// an hour), the ground it turns the page to —
+// white on the charcoal page, charcoal on the white — a .theme-toggle
+// with no -light or -dark of its own, so the head script turns the page
+// over. (It was a chip of three dots, then two, for an hour: LIGHT, DARK
+// and HEX's colour; HEX is struck.)
+// (THE CIRCLE IN THE NAME'S CORNER, 2026-10-01, at the user's word:
+// from 1024 up it stands in the head rail's stack beside THE LAST
+// MAGAZINE, 36 from the window's top and right — style.css, THE CIRCLE
+// IN THE NAME'S CORNER — and the strip's copy is not shown; under 1024
+// the strip's copy stands as before)
+// (THE DOT IN THE COLUMN'S CORNER, 2026-10-04, at the user's words —
+// "Move the dot to the top right corner of The Latest"; "Inset equally
+// from the top as from the side"; then, after a few minutes between
+// ARCHIVE and THE LAST MAGAZINE, "Keep in The Latest": from 1024 up the
+// light/dark dot stands in the column's sticky hold, its top right corner,
+// not in the band; the band's keeps the phone's)
+function railDot() {
+  return themeChip().replace('chip-dot--flip"', 'chip-dot--flip chip-dot--rail"') + railCarets();
+}
+// THE COLUMN SHUTS (2026-10-05, at the user's words — "I want to add a
+// caret that closes the column, sliding it out of view and pulling the
+// content into the center. A caret of a different position should then
+// fade in that allows the viewer to expand the latest column again"): in
+// the column's top left corner a caret pointing left shuts it; once it has
+// slid away, a caret pointing right fades in at the window's left edge and
+// opens it again (latest-rail.js, THE COLUMN SHUTS; style.css).
+function railCarets() {
+  const caret = (d) => `<svg viewBox="0 0 8 14" width="8" height="14" aria-hidden="true"><path d="${d}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  return `<button type="button" class="rail-shut" aria-label="Close the column" aria-expanded="true">${caret('M7 1L1 7L7 13')}</button>`
+    + `<button type="button" class="rail-open" aria-label="Open the column" aria-expanded="false" tabindex="-1">${caret('M1 1L7 7L1 13')}</button>`;
+}
+function themeChip() {
+  return `<button type="button" class="theme-toggle chip-dot chip-dot--flip" aria-label="Light or dark"></button>`;
+}
+function navStrip() {
+  const by = (key) => SITE_LINKS.find((l) => l.key === key);
+  const link = (l, word, cls = '') => l ? `<a class="sub-ticker-half${cls ? ' ' + cls : ''}" href="${escapeHtml(l.href)}"><b>${escapeHtml(word)}</b></a>` : '';
+  const dead = (word) => `<span class="sub-ticker-half nav-links-dead"><b>${escapeHtml(word)}</b></span>`;
+  // (SUBSCRIBE, ARCHIVE, ABOUT, STORE, EVENTS — and LIGHT / DARK / HEX
+  // until it became the corner chip: 2026-09-30, at the user's word. THE LAST MAGAZINE, which stood among
+  // them for a day, has its own line over the strip again from
+  // 2026-10-01 — the head rail, openMovement — and the strip rises over
+  // it on the scroll.)
+  return `<nav class="sub-ticker sub-ticker--foot sub-ticker--pin sub-ticker--nav" aria-label="The New Critic"><span class="sub-ticker-run">${[
+    `<a class="sub-ticker-half sub-ticker-half--sub" href="${SITE_URL}/subscribe" rel="noopener"><b>Subscribe</b></a>`,
+    // (STORE and ARCHIVE change places, design/stacked-wordmark, at the
+    // user's word — "switch archive and store")
+    dead('Store'),
+    // (THE LAST MAGAZINE IN ABOUT'S PLACE, 2026-10-01, at the user's word
+    // — "Replace about with The Last Magazine in helvetica style": the
+    // About link reads THE LAST MAGAZINE in the strip's capitals, black
+    // like its neighbours — "Actually the last magazine should also be
+    // black" — after a minute in white)
+    // (IN THE DEK'S GARAMOND for an hour on 2026-10-02 — "turn The Last
+    // Magazine to Garamond dek styling in the band" — then back in the
+    // strip's Helvetica capitals at the user's word: "Move the Last
+    // Magazine back to helvetica")
+    // (in the Garamond italic at 36, then 18, for a while on 2026-10-02 in
+    // design/stacked-wordmark; back in the strip's Helvetica capitals at
+    // the user's word — "Switch back to helvetica for THe last magazine")
+    // (THE LAST and MAGAZINE in two pieces, design/stacked-wordmark, so the
+    // bird can come down between them as the strip rises: band-mark.js,
+    // THE BIRD ONTO THE BAND)
+    // (REMOVED, design/stacked-wordmark, at the user's word — "Remove the
+    // last magazine": a gap keeps its place in the middle of the head
+    // strip for the bird to settle in, and the bird, settled, goes where it
+    // went — data-href; band-mark.js, THE NAME SETTLES IN THE BAND WITH THE
+    // BIRD. Unseen everywhere else.)
+    by('about') ? `<span class="sub-ticker-half sub-ticker-half--slot" aria-hidden="true" data-href="${escapeHtml(by('about').href)}"></span>` : '',
+    link(by('archive'), 'Archive'),
+    // (ABOUT in EVENTS' place, design/stacked-wordmark, at the user's word —
+    // "Replace events with About")
+    // (THE LAST MAGAZINE IN ABOUT'S PLACE, 2026-10-04, at the user's word —
+    // "Move The Last Magazine from the left of the homepage to replace the
+    // About as Helvetica": the strip's last word, in the strip's face, to
+    // About as About went)
+    link(by('about'), SITE_TAGLINE, 'sub-ticker-half--tlm'),
+    // (LIGHT / DARK / HEX stood here as the strip's last word from
+    // 2026-09-30; on 2026-10-01 it left for a chip in the window's corner,
+    // became one circle there, and came back as that circle, the strip's
+    // last thing — themeChip; THE CIRCLE IS STRUCK, 2026-10-04, at the
+    // user's word: "Remove color change dot")
+  ].join('')}</span></nav>`;
+}
+
+function renderSectionBand(m, { mid = '', currentKey = '', bareMid = false, home = false } = {}) {
   const b = SECTION_BANDS[m] || SECTION_BANDS.latest;
   if (m === 'latest') {
     // The masthead's band: the site's links, the magazine's name, the
     // date. The name no longer rides in the courier beside the date —
     // it has the middle to itself.
-    const links = currentKey
+    // (on the front page the band holds only THE LAST MAGAZINE, a line
+    // and not a link, the links gone down to the strip: 2026-09-30)
+    const links = home ? '<span class="band-inert">The Last Magazine</span>'
+      : currentKey
       ? bandDeks(m).replace(`<a href="${currentKey}.html">`, `<a href="${currentKey}.html" aria-current="page">`)
       : bandDeks(m);
-    return `<nav class="section-band section-band--three" aria-label="The Young American Magazine">
-    ${bandName(TYAM_LINK)}
-    <p class="band-deks band-dek">${mid ? `<span>${escapeHtml(mid)}</span>` : `<span class="band-date">${bandDate()}</span>`}</p>
+    // THE DATE IS BACK IN THE MIDDLE (2026-09-23), on the word pages
+    // too (bareMid still keeps their own line out of it): it gives its
+    // seat to the band's miniature THE NEW CRITIC as the big name goes
+    // under the band (src/band-mark.js).
+    return `<nav class="section-band section-band--three section-band--head" aria-label="The Last Magazine">
+    ${bandName('')}
+    <p class="band-deks band-dek">${mid && !bareMid ? `<span>${escapeHtml(mid)}</span>` : ''}</p>
     <p class="band-deks">${links}</p>
   </nav>`;
   }
@@ -1307,20 +1764,87 @@ function renderSectionBand(m, { mid = '', currentKey = '' } = {}) {
 // viewport less the name and the band; and the colophon band closes
 // the page on the screen's foot (style.css, THE FOOT IS THE HEAD
 // TURNED OVER). The front page and the word pages close alike.
-function renderPageFoot() {
-  return `
-  <section class="reprint">
-    <div class="reprint-rule" aria-hidden="true"></div>
-    <a class="reprint-name" href="./" aria-label="The New Critic — home">The <span class="tn-new">New</span> Critic</a>
-  </section>
-  <div class="foot-field" aria-hidden="true"></div>
-  ${renderColophonBand()}`;
+// THE NAME GOES HOME (2026-09-21). Both big wordmarks — the masthead's
+// and this one — had no href at all for two days: links in name only.
+// They go to the TOP OF THE FRONT PAGE: a bare #top where the reader is
+// already on it, so the page scrolls rather than reloads (the rows'
+// wrapper carries the id), and ./#top from a word page.
+// THE FOOT TAKES THE MARK when the movement over it does (onMark): the
+// reprint stands on the mark's colour; the colophon keeps its own
+// charcoal (2026-09-23: it took the mark for a night, then the page's
+// white for a morning), the copyright in its middle again where a 36
+// band of charcoal over it had carried it for a day.
+// THE BAND OVER THE NAME (2026-09-23): the head turned over, as the
+// head now opens on the name with its band under it — the colophon
+// closes the rows and the reprint stands UNDER it, the page's last
+// thing, pinned to the window's foot a level under the page until the
+// colophon lifts off it (style.css, THE BAND OPENS UNDER THE NAME).
+function renderPageFoot(onHome = false, onMark = false) {
+  const mk = onMark ? ' on-mark' : '';
+  // (the foot's own ticker is struck, 2026-09-24: the head's rides
+  // under the band the whole page, style.css, THE TICKER RIDES UNDER THE
+  // BAND)
+  // THE SUBSCRIBE STRIP PINS TO THE WINDOW'S FOOT UNTIL THE COLOPHON
+  // (2026-09-30, at the user's word): on the front page it stands in
+  // the rows straight over the colophon, sticky at the window's foot,
+  // so it rides the foot the page's whole length and comes to rest on
+  // the colophon as it arrives (style.css, THE STRIP PINS TO THE FOOT)
+  // (THE REPRINT IS STRUCK, 2026-09-30, at the user's word: the page
+  // ends on the colophon. It came back for a morning on 2026-10-01 —
+  // the name under the colophon, revealed as the page lifted off it —
+  // and was struck again the same day.)
+  return `${onHome ? `\n  ${navStrip()}` : ''}
+  ${onHome ? renderHomeColophon() : renderColophonBand()}
+  <div class="foot-field${mk}" aria-hidden="true"></div>`;
 }
-function renderColophonBand() {
-  return `<nav class="section-band section-band--colophon section-band--three" aria-label="Colophon">
+// THE FOOT IS THE HEAD TURNED OVER IN ITS SLOTS (2026-09-19): the head
+// band opens on its NAME at the left and closes on its links at the
+// right; the colophon takes the same pair the other way round — the
+// socials at the left, EST. MAY 2025 at the right — so the two bands
+// mirror each other across the page rather than repeating each other.
+// (It stood this way first to put the Garamond opposite the Helvetica
+// capitals the names wore for an hour. The capitals are struck and
+// both names are the Garamond again; the turn stays on its own
+// account.)
+// The order here is the order on the page — the band is a grid of 1fr
+// auto 1fr and the sheet ranges the first slot left and the last right
+// — so the turn is made by emitting them the other way, not by
+// ordering them in CSS where the ranging would then be arguing with
+// the markup.
+function renderColophonBand(mk = '') {
+  return `<nav class="section-band section-band--colophon section-band--three${mk}" aria-label="Colophon">
+    <p class="band-deks"><a href="https://www.thenewcritic.com" rel="noopener">Substack</a>${BAND_SEP}<a href="https://www.instagram.com/thenewcritic" rel="noopener">Instagram</a>${BAND_SEP}<a href="https://x.com/thenewcritic" rel="noopener">X</a>${BAND_SEP}<a href="mailto:editors@thenewcritic.com">Email</a></p>
+    <p class="band-deks band-dek"><span class="band-copyright">Copyright The New Critic, Inc.</span></p>
     ${bandName('<span>Est. May 2025</span>')}
-    <p class="band-deks band-dek"><span>Copyright The New Critic, Inc.</span></p>
-    <p class="band-deks"><a href="https://www.thenewcritic.com" rel="noopener">Substack</a>, <a href="https://www.instagram.com/thenewcritic" rel="noopener">Instagram</a>, <a href="mailto:editors@thenewcritic.com">Email</a></p>
+  </nav>`;
+}
+// THE COLOPHON IS THE BAND TURNED OVER (2026-10-04, at the user's word:
+// "I want to update the colophon to look like the top band with the
+// charcoal and the new labeling. And I would like, instead of the top
+// band, to have the new critic and the bird stamp be very large and to
+// sit beneath the work sans row as a row of its own. When the colophon
+// arrives, it should push the top band out of view"): on the front page
+// the colophon is the band's charcoal, its links in the band's Work Sans
+// capitals across one row, and under them the band's name — the bird,
+// THE, NEW, CRITIC — the window's width less its 54s (style.css, THE
+// COLOPHON IS THE BAND TURNED OVER). The band's track ends on its top
+// (latest-rail.js), so it pushes the band off as it comes up.
+function renderHomeColophon() {
+  // (the socials stood as one run with commas for a day, 2026-10-05 — "Same
+  // with social media at the bottom" — and spread again at the user's word
+  // the next: "Remove comma spacing from colophon")
+  const links = [
+    '<a href="https://www.thenewcritic.com" rel="noopener">Substack</a>',
+    '<a href="https://www.instagram.com/thenewcritic" rel="noopener">Instagram</a>',
+    '<a href="https://x.com/thenewcritic" rel="noopener">X</a>',
+    '<a href="mailto:editors@thenewcritic.com">Email</a>',
+    '<span>Copyright The New Critic, Inc.</span>',
+  ];
+  // (EST. MAY 2025 opens the row — "Move Est. to the left of the colophon")
+  links.unshift('<span>Est. May 2025</span>');
+  return `<nav class="section-band section-band--colophon colo" aria-label="Colophon">
+    <p class="colo-run">${links.join('')}</p>
+    <div class="colo-name">${bandLogoHtml('colo', 'colo-logo')}</div>
   </nav>`;
 }
 function renderPageRail({ side, word, href, after, before, categories }) {
@@ -1344,7 +1868,57 @@ function renderPageRail({ side, word, href, after, before, categories }) {
 // measure (fitSubscribeName in duo-panel-fit.js sets the letter-
 // spacing), and one courier line centred under it. SUBSCRIBE closes
 // the first movement; EVENTS closes the essays.
-function renderBanner({ word, href, words, line, modifier, spacer = true }) {
+// THE SUBSCRIBE BAND'S LINE (2026-09-17): the offer alone, one courier
+// line in capitals under the word, seated by ink 32 off its feet
+// (fitSubscribeName, duo-panel-fit.js). (The terms and the list stood
+// under it in Garamond for a spell; struck.)
+const SUBSCRIBE_ABOVE = [];
+const SUBSCRIBE_BELOW = ['Sign up for our free newsletter, or become a paid subscriber.'];
+// THE PITCH ITSELF, SAID ONCE (2026-09-19). The About page's Subscribe
+// card and the corner box (renderSubscribeBox) are the same offer in
+// two places, so the words are one constant and the markup around them
+// is each site's own.
+// THE PRICE CARRIES THE WEIGHT (2026-09-19), in the corner box and
+// there alone: the pitch is one sentence and the offer inside it is
+// three words, so they are set bold and the rest is not. The About
+// card keeps the sentence plain — the emphasis is the box's, where the
+// reader is being asked, not the page's, where they are already
+// reading. Hence two forms of one string, joined from the same parts
+// so the WORDS can never drift apart.
+const SUBSCRIBE_PITCH_PARTS = [
+  'Sign up for our free newsletter, or become a paid subscriber. For ',
+  '$30 a year',
+  ', hundreds of paid readers get access to:',
+];
+const SUBSCRIBE_PITCH = SUBSCRIBE_PITCH_PARTS.join('');
+const SUBSCRIBE_PITCH_HTML = SUBSCRIBE_PITCH_PARTS[0]
+  + `<strong class="sub-box-price">${SUBSCRIBE_PITCH_PARTS[1]}</strong>`
+  + SUBSCRIBE_PITCH_PARTS[2];
+const SUBSCRIBE_GETS = [
+  'Postscript, our interview series',
+  'Contra, our criticism section',
+  'Exclusive New Critic parties',
+];
+// A run of numbered lines (1. 2. 3.) is one LIST: set ragged-left
+// inside a block that is itself centred, so the numbers stand in a
+// column and the list stands on the page's axis (style.css,
+// .banner-list), and stood off the line before it by the same ink
+// gap the message stands off the word (fitSubscribeName).
+const bannerLines = (lines, where) => {
+  if (!lines || !lines.length) return '';
+  const out = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (/^\d+\.\s/.test(lines[i])) {
+      const run = [];
+      while (i < lines.length && /^\d+\.\s/.test(lines[i])) run.push(escapeHtml(lines[i++]));
+      i--;
+      out.push(`<span class="banner-list">${run.join('<br>')}</span>`);
+    } else out.push(lines[i] ? escapeHtml(lines[i]) : '&nbsp;');
+  }
+  return `<p class="banner-line banner-line--${where}">${out.join('<br>')}</p>`;
+};
+
+function renderBanner({ word, href, words, line, modifier, spacer = true, above, below }) {
   // A banner may carry no courier line at all — STORE is the word by
   // itself, so the charcoal closes on its baseline ink instead of on
   // a band's 48 box (see .page-banner--bare).
@@ -1352,16 +1926,22 @@ function renderBanner({ word, href, words, line, modifier, spacer = true }) {
   // closes the page): each its own link inside the one name box, so
   // the fitter sizes and tracks the pair to the measure as one word.
   const link = (w, h) => `<a href="${escapeHtml(h)}"${h.startsWith('http') ? ' rel="noopener"' : ''}>${escapeHtml(w)}</a>`;
+  // THE SECTION'S WORD IS A TITLE, NOT A LINK (2026-09-22): ESSAYS,
+  // POSTSCRIPT and CONTRA name what stands under them and go nowhere —
+  // the band's links and the margin's names still do. A heading, so it
+  // is still read as one; with no link fillNameBand seats no hit patch
+  // and the word does not answer the hand (style.css, THE ESSAYS STAND
+  // ON THE MARK).
   const name = words
     ? `<span class="banner-name banner-name--pair">${words.map((w) => link(w.word, w.href)).join(' ')}</span>`
-    : `<a class="banner-name" href="${escapeHtml(href)}"${href.startsWith('http') ? ' rel="noopener"' : ''}>${escapeHtml(word)}</a>`;
+    : `<span class="banner-name" role="heading" aria-level="2">${escapeHtml(word)}</span>`;
   // AN EMPTY WHITE BANNER STANDS ABOVE THE SECTION'S WORD — the same
   // box as the word's own banner, with nothing on it (the fitter
   // matches its height to the banner it opens for, fitBlankBanners) —
   // and the viewport-tall spacer that used to stand BELOW the word is
   // gone.
   return `<section class="page-banner ${modifier}${line ? '' : ' page-banner--bare'}">
-        ${name}
+        ${bannerLines(above, 'above')}${name}${bannerLines(below, 'below')}
         ${line ? `<div class="dek-band dek-band--banner">
           <span>${escapeHtml(line)}</span>
         </div>` : ''}
@@ -1438,9 +2018,42 @@ function coverUnderPair(post, { authorPrefix = '', cat = '' } = {}) {
 // every card's words — carries the control that opens the preview,
 // underlined, in the same courier voice as the line it replaced. The
 // fitters seat it exactly as they seated the date (.cover-meta--peek).
+// THE REVIEW'S AUTHOR AND DATE STAND UP THE FRAME'S SIDES (2026-09-22):
+// each a vertical stack of its capitals, one to the line — the author
+// in the frame's left column, the date in its right — linking where the
+// byline's two did. The fitter seats and sizes them (seatMatterMeta);
+// the byline row stands invisible in the flow for the review's fit.
+// THE BYLINE AND THE KICKER TRADE SEATS (2026-09-23): the author
+// stands across the frame's head band now and the kicker up its left
+// side, the date up the right as before; a postscript's issue number
+// (lead) stands where its author would. The SEATS keep the classes the
+// fitter and the sheet know them by — .cover-meta--kick with its
+// .cover-kicker for the head band, .side-stack--author for the left
+// column — so every seat, size and ink is as it was; what stands in
+// each is chosen here.
+// THE WORDS IN THE FRAME'S CORNERS (2026-09-23): the date at the head's
+// right and the kicker at the foot's right, lines of the frame's own kind
+// (the byline's head line, kickLine, at the head's left and Preview at
+// the foot's left) — seatMatterMeta ranges all four on the picture's
+// edges. They stood up the frame's sides as stacks of capitals before.
+function sideStacksHtml(post) {
+  const line = (text, cls, href) => text
+    ? `<p class="cover-meta cover-meta--kick cover-meta--corner cover-meta--${cls}"><span class="cover-kicker"><a href="${escapeHtml(href)}">${escapeHtml(text)}</a></span></p>`
+    : '';
+  return line(metaDateText(post), 'cdate', archiveHref(post, 'date'))
+    + line(post.kicker, 'ckick', archiveHref(post, 'kicker'));
+}
+// THE FRAME'S HEAD BAND carries the byline at its left (seatMatterMeta
+// seats it); the date, the kicker and Preview take the other corners.
+function kickLine(post, { lead = '' } = {}) {
+  const text = lead || authorDisplay(post, false);
+  return text
+    ? `<p class="cover-meta cover-meta--kick"><span class="cover-kicker"><a href="${escapeHtml(archiveHref(post, 'author'))}">${escapeHtml(text)}</a></span></p>`
+    : '';
+}
 function peekLine() {
   return '<p class="cover-meta cover-meta--peek">' +
-    '<button type="button" class="peek-open">Read Preview</button></p>';
+    '<button type="button" class="peek-open">Preview</button></p>';
 }
 // THE POSTSCRIPT'S DEK NAMES ITS SUBJECT: "Declan Rexer on Deep Springs"
 // — the name the courier used to carry over the title (w/ ...), set
@@ -1456,7 +2069,7 @@ function psDek(post) {
   const rest = sub.replace(/^on\s+/i, '');
   return `<p class="latest-dek">${escapeHtml(`${name} on ${rest}`)}</p>`;
 }
-function coverMetaLine(post, { authorPrefix = '', only = '', cls = '', lead = '' } = {}) {
+function coverMetaLine(post, { authorPrefix = '', only = '', cls = '', lead = '', withKicker = false } = {}) {
   // A LEAD PIECE — the postscript's issue number ("No. 21") — stands
   // where the author used to, in the author's own span so the fitters
   // seat the pair as they seated AUTHOR · DATE.
@@ -1471,7 +2084,10 @@ function coverMetaLine(post, { authorPrefix = '', only = '', cls = '', lead = ''
     ? `<span class="cover-date"><a href="${escapeHtml(archiveHref(post, 'date'))}">${escapeHtml(dateText)}</a></span>`
     : '';
   // The kicker is retired from the line: AUTHOR · DATE alone.
-  const parts = (only === 'author' ? [author] : only === 'date' ? [leadPiece, date] : [author, date]).filter(Boolean);
+  // THE KICKER IS BACK ON THE LINE, IN THE FRAME (2026-09-22): out of
+  // the preview, where it opened the plate, and at the head of the
+  // frame's own line — withKicker, for the cards whose frame it is.
+  const parts = (withKicker ? [kicker] : []).concat(only === 'author' ? [author] : only === 'date' ? [leadPiece, date] : [author, date]).filter(Boolean);
   // THE DOT TRAVELS WITH WHAT FOLLOWS IT. Each part after the first
   // carries its own separator INSIDE its nowrap span, so when the line
   // breaks the dot opens the second line rather than dangling at the
@@ -1628,7 +2244,7 @@ function renderCard(post, { dekLength = 110, eager = false, kicker = '' } = {}) 
 // modifier (e.g. card--trio for the 1:2 portrait postscript row).
 // halfClass carries a placement modifier for the mosaic's shaped cells
 // (archive-tall / archive-wide).
-function renderDuoHalf(post, { tag, btnLabel, btnHref, sectionBtn = true, showArtInBand = true, showDek = true, restChipArt = false, megaLabel = 'The Latest', megaSwapMeta = false }, halfClass = '') {
+function renderDuoHalf(post, { tag, btnLabel, btnHref, sectionBtn = true, showArtInBand = true, showDek = true, restChipArt = false, megaLabel = 'The Latest', megaSwapMeta = false, megaKind = '' }, halfClass = '') {
   // Section accent: essays pink, postscript purple, contra green, carried
   // as a --accent custom property on the cell (see .duo-half--essay etc.
   // in style.css) so every hover effect inside the card — title, glows,
@@ -1645,7 +2261,7 @@ function renderDuoHalf(post, { tag, btnLabel, btnHref, sectionBtn = true, showAr
   // .meta-dek, displacing the date down to the band) — with the work's
   // title in italics (see contraWorkDek).
   const dekHtml = showDek && post.subtitle
-    ? `<p class="card-dek">${section === 'contra' ? contraWorkDek(post.subtitle) : escapeHtml(post.subtitle)}</p>`
+    ? `<p class="card-dek">${section === 'contra' || megaKind === 'contra' ? contraWorkDek(post.subtitle) : escapeHtml(post.subtitle)}</p>`
     : '';
   // Full, untruncated paragraphs (several of them where the row-posts
   // fetch in main() ran) — duo-panel-fit.js decides at render time how
@@ -1675,7 +2291,7 @@ function renderDuoHalf(post, { tag, btnLabel, btnHref, sectionBtn = true, showAr
   const isPostscript = section === 'postscript';
   // Postscript names its subject with "w/"; essays and contra reviews print
   // the author's name plain (the "by" is dropped from the hover byline).
-  const authorPrefix = isPostscript ? 'w/ ' : '';
+  const authorPrefix = isPostscript || megaKind === 'postscript' ? 'w/ ' : '';
   // sectionBtn is true only on the homepage rows (renderListPage and the
   // heroes pass false) — the "this is a homepage cell" signal. On the
   // homepage the copy-link lives in the footer band (left of the likes),
@@ -1693,8 +2309,8 @@ function renderDuoHalf(post, { tag, btnLabel, btnHref, sectionBtn = true, showAr
   // "by"/"w/" prefix) takes the top-RIGHT beside it. Essay/postscript chips
   // deep-link into the archive by topic; contra's carries the filtered
   // contra-page link (it used to ride the footer, now dropped from there).
-  const kickerHref = section === 'contra'
-    ? `contra.html#${escapeHtml(post.kicker ? post.kicker.toLowerCase() : '')}`
+  const kickerHref = section === 'contra' || megaKind === 'contra'
+    ? `archive.html#section=contra&topic=${escapeHtml(post.kicker ? post.kicker.toLowerCase() : '')}`
     : escapeHtml(archiveHref(post, 'kicker'));
   const bylineKickerBox = post.kicker
     ? `<a class="meta-kicker" href="${kickerHref}">${escapeHtml(post.kicker)}</a>`
@@ -1879,11 +2495,11 @@ function renderDuoHalf(post, { tag, btnLabel, btnHref, sectionBtn = true, showAr
             <div class="panel-col panel-col--left">
               ${kickerHtml}
               ${underKickerHtml}
-              ${isMega ? coverMetaLine(post, { cls: 'author' }) : ''}
+              ${isMega ? coverMetaLine(post, { only: 'author', cls: 'author' }) + kickLine(post) : ''}
               ${titleHtml}
               ${isMega ? '' : creditHtml}
               ${splitCredit ? dekHtml : ''}
-              ${isMega ? peekLine() : ''}
+              ${isMega ? peekLine() + sideStacksHtml(post) : ''}
               ${splitCredit && !isMega ? footHtml : ''}
             </div>
             <div class="panel-col-divider" role="separator"></div>
@@ -1914,10 +2530,10 @@ const DUO_DIVIDER = '<div class="duo-half-divider" role="separator"></div>';
 function renderSplitRow(essayPost, psPost, { flip = false, wideOpts, narrowOpts, showDek = true } = {}) {
   const halves = [
     essayPost
-      ? renderDuoHalf(essayPost, wideOpts || { tag: 'From the Essay', btnLabel: 'Essays', btnHref: 'essays.html', showDek }, 'duo-half--wide')
+      ? renderDuoHalf(essayPost, wideOpts || { tag: 'From the Essay', btnLabel: 'Essays', btnHref: 'archive.html#section=essays', showDek }, 'duo-half--wide')
       : '<div class="duo-half duo-half--ghost duo-half--wide" aria-hidden="true"></div>',
     psPost
-      ? renderDuoHalf(psPost, narrowOpts || { tag: 'From the Interview', btnLabel: 'Postscript', btnHref: 'postscript.html', showDek }, 'duo-half--narrow')
+      ? renderDuoHalf(psPost, narrowOpts || { tag: 'From the Interview', btnLabel: 'Postscript', btnHref: 'archive.html#section=postscript', showDek }, 'duo-half--narrow')
       : '<div class="duo-half duo-half--ghost duo-half--narrow" aria-hidden="true"></div>',
   ];
   if (flip) halves.reverse();
@@ -1928,7 +2544,7 @@ function renderSplitRow(essayPost, psPost, { flip = false, wideOpts, narrowOpts,
 }
 
 function renderDuoCard(posts, opts = {}) {
-  const { tag = 'From the Essay', btnLabel = 'Essays', btnHref = 'essays.html', extraClass = '', padTo = 0, sectionBtn = true, showDek = true } = opts;
+  const { tag = 'From the Essay', btnLabel = 'Essays', btnHref = 'archive.html#section=essays', extraClass = '', padTo = 0, sectionBtn = true, showDek = true } = opts;
   if (!posts.length) return '';
   const cells = posts.map((post) => renderDuoHalf(post, { tag, btnLabel, btnHref, sectionBtn, showDek }));
   // A short last row (the section pages render every post, so their post
@@ -1984,15 +2600,72 @@ function renderArchiveMosaic(posts, opts) {
 // covering the left three fifths and the cover showing beside it; its
 // height runs to the bottom of the rail's TIC (see .card--mega in
 // style.css).
-function renderMegaHero(post, { rev = false, label = 'The Latest', m2 = false } = {}) {
+// THE LATEST, STACKED (2026-09-18): the two words one letter to the
+// line, in the name's condensed bold, against the right margin's line
+// from the top of the lead card down — a blank line between the words.
+// Absolute in the card (style.css, .latest-stack); the fitter seats
+// the first cap on the card's top edge (fitLatestStack).
+// (Either margin — the front page's THE LATEST at the right, the
+// archive's EDITORS' PICKS at the left. An apostrophe rides on the
+// line of the letter before it, HUNG off that letter's right: the
+// letter centres on the column's axis like every other and the mark
+// stands outside it, absolute on the letter's own box — style.css,
+// .latest-stack-mark.)
+const stackHtml = (text, side = 'right', href = 'archive.html') => `<a class="latest-stack latest-stack--${side}" href="${escapeHtml(href)}" aria-label="${escapeHtml(text)}">${text.match(/ |[^\s'’]['’]?/g).map((ch) => ch === ' ' ? '<span class="latest-stack-gap" aria-hidden="true"></span>' : ch.length > 1 ? `<span aria-hidden="true"><span class="latest-stack-glyph">${escapeHtml(ch[0])}<span class="latest-stack-mark">${escapeHtml(ch.slice(1))}</span></span></span>` : `<span aria-hidden="true">${escapeHtml(ch)}</span>`).join('')}</a>`;
+// ONE LINE OF POSTS (2026-09-23): the postscripts and the reviews wear
+// the essay's card too — picture, courier line and title under it, the
+// preview a dog-ear in its corner — each keeping its own picture
+// (a postscript's portrait, a review's square: style.css, ONE LINE OF
+// POSTS). `kind` names which; the card is the essay's in every other
+// respect, the fitter's essay paths and all.
+function renderMegaHero(post, { rev = false, label = 'The Latest', m2 = false, stack = '', stackSide = 'right', stackHref = 'archive.html', kind = '', pair = '', align = '', flip = false, trueHeight = false, trueWidth = false, row = null } = {}) {
   if (!post) return '';
-  const half = renderDuoHalf(post, { tag: 'From the Essay', btnLabel: 'Essays', btnHref: 'essays.html', megaLabel: label, megaSwapMeta: rev }, 'duo-half--wide duo-half--mega');
+  const half = renderDuoHalf(post, { tag: 'From the Essay', btnLabel: 'Essays', btnHref: 'archive.html#section=essays', megaLabel: label, megaSwapMeta: rev, megaKind: kind }, `duo-half--wide duo-half--mega${kind ? ` duo-half--kind-${kind}` : ''}${row && row.r === 0 ? ' is-in' : ''}`);
   // (The hero's masthead row is retired — the top header carries the
   // brand; the hero opens straight on its courier band.)
   // The REV hero mirrors the composition — cover left, ground right
   // (see THE SECOND HERO in style.css).
-  return `<section class="card card--duo card--split card--mega${rev ? ' card--mega-rev' : ''}${m2 ? ' card--m2' : ''}">
-        ${half}</section>`;
+  // EVERY PICTURE TURNED OVER (2026-09-22): the heroes' sides are dealt
+  // the other way round from the alternation above — the first hero's
+  // picture on the left, its title column on the right
+  // THE WORDS UNDER THE PICTURE TAKE A SIDE (2026-09-24): the courier
+  // line and the title set right on every other essay (align 'r') and
+  // on the right-hand card of a pair, left on the rest (style.css and
+  // seatMatterMeta, THE WORDS UNDER THE PICTURE TAKE A SIDE)
+  // (a FLIPPED pair stands its first card on the right and its second
+  // on the left, so the diagonal can step on from the card over it:
+  // EVERY CARD STEPS DOWN, 2026-09-24)
+  // (THE LATEST'S POSTS STAND TWO TO A ROW, 2026-09-30: courier and
+  // title set left on the left-hand card of a row and right on the
+  // right-hand one, at the user's word)
+  const alignR = row ? (row.alignR != null ? !!row.alignR : row.side === 'b') : flip ? pair === 'a' : (align === 'r' || pair === 'b');
+  // THE ESSAY'S PICTURE STANDS AT ITS OWN HEIGHT (2026-09-24): an
+  // essay's cover keeps its width and takes its original's proportions
+  // down the page, read off the _WxH Substack writes into the file name,
+  // so the card is its true height from the first paint, with no
+  // waiting on the picture and nothing moving when it lands. Handed to
+  // the sheet as --pic-r (height over width), which floors it at the old
+  // box and caps it (style.css, THE ESSAY'S PICTURE STANDS AT ITS OWN
+  // HEIGHT). Postscripts and reviews keep their shapes; the front page
+  // asks for it (trueHeight), the word pages' heroes are left as they were.
+  // THE POSTSCRIPT'S PICTURE AT ITS OWN WIDTH (2026-09-24, at the user's
+  // word): a postscript keeps its height and takes its original's
+  // proportions ACROSS — the same _WxH, the same --pic-r, marked
+  // .card--true-w (style.css, THE POSTSCRIPTS STAND AT THEIR OWN WIDTHS).
+  const dims = ((trueHeight && !kind) || (trueWidth && kind === 'postscript')) && /_(\d+)x(\d+)\.[a-z]+$/i.exec(decodeURIComponent(post.image || ''));
+  const picR = dims && +dims[1] > 0 && +dims[2] > 0 ? +dims[2] / +dims[1] : 0;
+  const slug = slugOf(post.link);
+  const ov = LAYOUT_OVERRIDES[slug];
+  const hasOv = ov && +ov.w > 0 && +ov.r > 0;
+  const hasX = hasOv && ov.x != null && +ov.x >= 0 && +ov.x <= 1;
+  // THE LATEST'S POSTS STAND TWO TO A ROW (2026-09-30): each card carries
+  // its own row's two widths-per-height (--row-ka, --row-kb) and every
+  // row's (--k0a …), so the sheet can solve the one picture height every
+  // row can hold (style.css, THE LATEST'S POSTS STAND TWO TO A ROW).
+  const styles = [row ? `--row-ka: ${row.ka.toFixed(4)}; --row-kb: ${row.kb.toFixed(4)}; ${row.all}${row.fixedAt && row.fixedAt.has(2 * row.r) ? '; --row-fa: 1' : ''}${row.fixedAt && row.fixedAt.has(2 * row.r + 1) ? '; --row-fb: 1' : ''}` : '', picR ? `--pic-r: ${picR.toFixed(4)}` : '', hasOv ? `--ov-w: ${(+ov.w).toFixed(5)}; --ov-r: ${(+ov.r).toFixed(5)}` : '', hasX ? `--ov-x: ${(+ov.x).toFixed(5)}` : '', hasOv && +ov.dy && !Number.isFinite(+ov.y) ? `--ov-dy: ${(+ov.dy).toFixed(5)}` : '', hasOv && ov.y != null && Number.isFinite(+ov.y) ? `--ov-y: ${(+ov.y).toFixed(5)}` : ''].filter(Boolean).join('; ');
+  const trueH = `${picR ? ` ${kind ? 'card--true-w' : 'card--true-h'}` : ''}${hasOv ? ' card--ov' : ''}${hasX ? ' card--ovx' : ''}"${styles ? ` style="${styles}"` : ''}${row ? ` data-group="${row.g}" data-row="${row.i}" data-side="${row.side}"` : ''} data-slug="${escapeHtml(slug)}`;
+  return `<section class="card card--duo card--split card--mega${!rev ? ' card--mega-rev' : ''}${m2 ? ' card--m2' : ''}${kind ? ` card--kind-${kind}` : ''}${pair ? ` card--pair-${pair}` : ''}${flip ? ' card--pair-flip' : ''}${alignR ? ' card--align-r' : ''}${row ? ` card--row-${row.side}${row.solo ? ' card--row-solo' : ''}${row.big ? ' card--row-big' : ''}${row.sec ? ` card--sec-${row.sec} card--rail-${row.rail}${row.secFirst ? ' card--sec-first' : ''}${row.secLast ? ' card--sec-last' : ''}${row.pairRow ? ' card--sec-pair' : ''}` : ''}${row.slide ? ` card--slide-${row.slide}` : ''}` : ''}${trueH}">
+        ${half}${stack ? stackHtml(stack, stackSide, stackHref) : ''}</section>`;
 }
 
 // THE SECTION SHELVES: two half-page boxes side by side under the
@@ -2001,7 +2674,7 @@ function renderMegaHero(post, { rev = false, label = 'The Latest', m2 = false } 
 // box's right half. (The second box comes next.)
 function renderShelvesRow(psPost) {
   if (!psPost) return '';
-  const psHalf = renderDuoHalf(psPost, { tag: 'From the Interview', btnLabel: 'Postscript', btnHref: 'postscript.html' });
+  const psHalf = renderDuoHalf(psPost, { tag: 'From the Interview', btnLabel: 'Postscript', btnHref: 'archive.html#section=postscript' });
   return `<section class="card card--duo card--split card--shelves">
         <div class="section-box section-box--interviews">
           <p class="section-box-label">Interviews</p>
@@ -2030,15 +2703,19 @@ function renderShelvesRow(psPost) {
 function renderContraCell(post, { rev = false } = {}) {
   if (!post) return '';
   const cell = renderLatestRow(null, post, { cellOnly: true, noLabel: true });
-  return rev ? cell.replace('class="latest-cell latest-cell--contra"', 'class="latest-cell latest-cell--contra latest-cell--contra-rev"') : cell;
+  return cell;
 }
 
 // TWO POSTSCRIPTS TO A LINE: each cell keeps its cover-and-text pair,
 // so four columns share the measure and every one of them narrows by
 // the same amount (the cover column is stated as half its own cell).
+// THE PICTURES MEET IN THE MIDDLE: the LEFT postscript of each pair
+// reads turned over — words at the rail, picture toward the seam — so
+// its cover and the right cell's stand side by side down the centre
+// of the row, and the two text columns take the outer edges.
 function renderPostscriptPair(a, b, { stacked = false, rev = false } = {}) {
   const cells = [a, b].filter(Boolean)
-    .map((p) => renderLatestRow(p, null, { cellOnly: 'ps', noLabel: true }))
+    .map((p, i) => renderLatestRow(p, null, { cellOnly: 'ps', noLabel: true, psRev: i === 0 }))
     .join('\n        ');
   if (!cells) return '';
   return `<section class="card card--latest card--ps-pair${rev ? ' card--latest-rev' : ''}${stacked ? ' card--stacked' : ''}">
@@ -2061,7 +2738,7 @@ function renderContraTrio(posts, { stacked = false } = {}) {
       </section>`;
 }
 
-function renderLatestRow(psPost, contraPost, { rev = false, m2 = false, stacked = false, cellOnly = false, noLabel = false } = {}) {
+function renderLatestRow(psPost, contraPost, { rev = false, m2 = false, stacked = false, cellOnly = false, noLabel = false, psRev = false } = {}) {
   if (!psPost && !contraPost) return '';
   // THE TEXT COLUMN'S HEAD stands empty on every cell now — the
   // postscript reads its kicker, subject and date on the cover's own
@@ -2072,8 +2749,12 @@ function renderLatestRow(psPost, contraPost, { rev = false, m2 = false, stacked 
   // dead height the contra columns never carried.)
   const courierHead = () => `<p class="latest-courier"></p>
         <div class="latest-rule"></div>`;
-  const coverImg = (post) => post.image
-    ? `<img class="card-image" ${coverSrcAttrs(post.image, COVER_SIZES.cell)} alt=""${focalStyle(post)} loading="eager" fetchpriority="low" decoding="async">`
+  // The postscript's frame shapes, for its head crop (see headCrop):
+  // a pair's when the cell stands in the Postscript section, the
+  // latest row's otherwise.
+  const psFrame = PS_FRAMES[cellOnly === 'ps' ? 'pair' : 'latest'];
+  const coverImg = (post, frame) => post.image
+    ? `<img class="card-image" ${coverSrcAttrs(post.image, cellOnly === 'ps' ? COVER_SIZES.pair : COVER_SIZES.third)} alt=""${focalStyle(post, frame)} loading="eager" fetchpriority="low" decoding="async">`
     : '';
   // THE PLATE, the card's covered body text: on hover the artwork
   // slides over the title/dek matter and this stands revealed where
@@ -2104,9 +2785,9 @@ function renderLatestRow(psPost, contraPost, { rev = false, m2 = false, stacked 
   // in style.css).
   // THE COURIER STANDS OVER THE TITLE (the `before` slot): author and
   // date, then the title, then the dek.
-  const matter = (post, dekHtml, { before = '', after = '' } = {}) => `<div class="latest-matter">
+  const matter = (post, dekHtml, { before = '', after = '', titleStyle = '' } = {}) => `<div class="latest-matter">
             ${before}
-            <h3 class="latest-title"><a href="${escapeHtml(post.link)}" rel="noopener">${escapeHtml(post.title)}</a></h3>
+            <h3 class="latest-title"${titleStyle}><a href="${escapeHtml(post.link)}" rel="noopener">${escapeHtml(post.title)}</a></h3>
             ${dekHtml}
             ${after}
           </div>`;
@@ -2126,15 +2807,18 @@ function renderLatestRow(psPost, contraPost, { rev = false, m2 = false, stacked 
   // and the rules travel with it on the same transform.)
   const coverHead = (post, { rule = true, ...opts } = {}) => `<p class="latest-courier latest-courier--cover">${coverHeadPair(post, opts)}</p>${rule ? `
         <div class="latest-rule"></div>` : ''}`;
-  const ps = psPost ? `<div class="latest-cell latest-cell--ps">
+  // psRev turns the ONE cell over — text left, cover right — without
+  // the row modifier (.latest-cell--ps-rev in style.css shares the
+  // mirrored row's rules); the pairs use it on their left cell.
+  const ps = psPost ? `<div class="latest-cell latest-cell--ps${psRev ? ' latest-cell--ps-rev' : ''}">
         <!-- THE PICTURE RESTS BARE. Nothing is set into it and nothing
              hangs off its edges: the courier reads once, on one line
              under the dek in the column beside it. -->
         <div class="latest-cover-col latest-cover-col--portrait">
-          <a class="latest-cover latest-cover--portrait" href="${escapeHtml(psPost.link)}" rel="noopener">${coverImg(psPost)}</a>
+          <a class="latest-cover latest-cover--portrait" href="${escapeHtml(psPost.link)}" rel="noopener">${coverImg(psPost, psFrame.img)}</a>
         </div>
         <div class="latest-col">
-          ${matter(psPost, psDek(psPost), { before: coverMetaLine(psPost, { only: 'date', cls: 'author', lead: psPost.psNo ? `No. ${psPost.psNo}` : '' }), after: peekLine() })}
+          ${matter(psPost, psDek(psPost), { titleStyle: headBoxStyle(psPost, psFrame.box), before: (psPost.psNo ? `<p class="cover-meta cover-meta--author"><span class="cover-author cover-no">${escapeHtml(`No. ${psPost.psNo}`)}</span></p>` : coverMetaLine(psPost, { only: 'author', cls: 'author' })) + kickLine(psPost, { lead: psPost.psNo ? `No. ${psPost.psNo}` : '' }), after: peekLine() + sideStacksHtml(psPost) })}
         </div>
         ${plate(psPost)}
       </div>` : '';
@@ -2145,12 +2829,14 @@ function renderLatestRow(psPost, contraPost, { rev = false, m2 = false, stacked 
   // see THE REVIEW'S COURIER STANDS BETWEEN ITS WORDS in style.css).
   // The picture stands alone at the head of the cell, its top on the
   // postscript's.
-  const contra = contraPost ? `<div class="latest-cell latest-cell--contra">
+  // EVERY REVIEW TURNED OVER (2026-09-22): the picture's frame on top,
+  // the title column under it (.latest-cell--contra-rev on every cell)
+  const contra = contraPost ? `<div class="latest-cell latest-cell--contra latest-cell--contra-rev">
         <div class="latest-cover-col latest-cover-col--square">
           <a class="latest-cover latest-cover--square" href="${escapeHtml(contraPost.link)}" rel="noopener">${coverImg(contraPost)}</a>
         </div>
         <div class="latest-col">
-          ${matter(contraPost, contraPost.subtitle ? `<p class="latest-dek">${contraWorkDek(contraPost.subtitle)}</p>` : '', { before: coverMetaLine(contraPost, { cls: 'author' }), after: peekLine() })}
+          ${matter(contraPost, contraPost.subtitle ? `<p class="latest-dek">${contraWorkDek(contraPost.subtitle)}</p>` : '', { before: coverMetaLine(contraPost, { cls: 'author' }), after: peekLine() + sideStacksHtml(contraPost) + kickLine(contraPost) })}
         </div>
         ${plate(contraPost)}
       </div>` : '';
@@ -2176,13 +2862,15 @@ function renderLatestRow(psPost, contraPost, { rev = false, m2 = false, stacked 
       </section>`;
 }
 
-function renderHomepage({ essays = [], postscripts = [], contras = [], archives = [] }) {
+function renderHomepage({ essays = [], postscripts = [], contras = [], archives = [], pool = [] }) {
   // The lead essay (top-left, two thirds wide) is the first cover the
   // visitor sees — preloaded the way the old hero was.
+  // (NOT PRELOADED since 2026-09-24: the page opens on the masthead a
+  // window tall, and the first covers wait for the faces — see the gate,
+  // THE FIRST COVERS WAIT FOR THE FACES. A preload would fetch the lead
+  // at the head of the load, which is exactly what that undoes.)
   const lead = essays[0];
-  const leadPreload = lead?.image
-    ? `<link rel="preload" as="image" ${coverSrcAttrs(lead.image, COVER_SIZES.wide, { preload: true })}>`
-    : '';
+  const leadPreload = '';
 
   // The homepage grid, top to bottom — no separate hero card. Every
   // essay/postscript cover prints at the 1:1 duo squares' height, and
@@ -2223,7 +2911,7 @@ function renderHomepage({ essays = [], postscripts = [], contras = [], archives 
       blocks.push(renderDuoCard(row, {
         tag: 'From the Review',
         btnLabel: 'Contra',
-        btnHref: 'contra.html',
+        btnHref: 'archive.html#section=contra',
         extraClass: 'card--quad card--quad-open',
         padTo: 3,
       }));
@@ -2234,78 +2922,224 @@ function renderHomepage({ essays = [], postscripts = [], contras = [], archives 
   // rows, the postscript trio, the archive rows) was cleared — it
   // lives in git history at 73f10d7 — and the new composition begins
   // below with the latest row.
-  blocks.push(renderMegaHero(essays[0], { label: 'Essays' }));
-  // The latest postscript and contra, in the hero's dress (see
-  // renderLatestRow above).
-  blocks.push(renderLatestRow(postscripts[0], contras[0]));
-  // SUBSCRIBE UNDER THE FIRST ROW: the word in the sections' own
-  // dress — white Placard on the charcoal, spanning the measure, in
-  // the flow — standing straight under the latest row inside the
-  // first movement, not opening one (the .ops-word class keeps it out
-  // of the movement loop's banner test; it stands in the body between
-  // the rows, no wrap and no divider around it, the next row opening
-  // 72 under its feet as under any section word).
-  blocks.push(renderBanner({ word: 'Subscribe', href: `${SITE_URL}/subscribe`, modifier: 'subscribe-word' }).replace('class="page-banner', 'class="ops-word page-banner'));
-  // The SECOND essay as a mirrored hero inside the first movement —
-  // cover left, ground right — then the next postscript/contra pair
-  // MIRRORED too: contra left, postscript right with its text in the
-  // middle and its cover closing the row's right end. Both keep the
-  // lead seat (the rail is on the right up here, so no m2).
-  blocks.push(renderMegaHero(essays[1], { rev: true, label: 'Essays' }));
-  blocks.push(renderLatestRow(postscripts[1], contras[1], { rev: true }));
-  // THE SUBSCRIBE BAND: the header said again mid-page — the chrome
-  // block full-bleed, SUBSCRIBE in the masthead voice centred where
-  // the name stands above, and one courier line whose ink opens on
-  // the S's own left ink (glyph-seated by alignBands in
-  // duo-panel-fit.js). The statement reads as ONE LINE UNDER the
-  // word, centred on the page. It CLOSES the first movement:
-  // everything below it is the second.
-  // THE SECTION BANNERS NAME THE SECTIONS THEY OPEN — ESSAYS, POSTSCRIPT,
-  // CONTRA. (The modifiers keep their old names: the fitter's ground
-  // stops and rail-fix read them.)
-  blocks.push(renderBanner({ word: 'Essays', href: SECTION_BANDS.essays.href, modifier: 'subscribe-band' }));
-  // THE SECOND MOVEMENT, under the band: the next essay as a
-  // MIRRORED hero (cover left, ground right, labelled Essay), then
-  // the next contra/postscript pair mirrored the same way.
-  // THE ESSAYS OPEN ON THE BASE BUILD — title column LEFT, cover
-  // right, as the page's own hero — and alternate from there: base,
-  // mirrored, base, mirrored, base. essays[0] and [1] are spent in the
-  // first movement, so this movement reads from [2] and repeats
-  // nothing.
-  blocks.push(renderMegaHero(essays[2], { label: 'Essays', m2: true }));
-  blocks.push(renderMegaHero(essays[3], { rev: true, label: 'Essays', m2: true }));
-  blocks.push(renderMegaHero(essays[4], { label: 'Essays', m2: true }));
-  blocks.push(renderMegaHero(essays[5], { rev: true, label: 'Essays', m2: true }));
-  blocks.push(renderMegaHero(essays[6], { label: 'Essays', m2: true }));
-  // EVENTS closes the essays — the word alone, like STORE.
-  blocks.push(renderBanner({ word: 'Postscript', href: SECTION_BANDS.postscript.href, modifier: 'events-band' }));
-  // THE POSTSCRIPTS' MOVEMENT: three rows under EVENTS — the base
-  // build, then the pair MIRRORED, then the base again. All three
-  // keep the base SEAT (the strip is back on the right down here), so
-  // the middle one mirrors its contents without moving its box.
-  // The contras have left these rows — this movement is postscripts
-  // alone, each row's two columns splitting the whole measure.
-  blocks.push(renderPostscriptPair(postscripts[2], postscripts[3]));
-  // The middle pair reads REVERSED — cover right, text left.
-  // The middle pair used to mirror (picture on the other side); every
-  // pair reads the same way now.
-  blocks.push(renderPostscriptPair(postscripts[4], postscripts[5], { stacked: true }));
-  // And a third pair back in the base build — covers on the left.
-  blocks.push(renderPostscriptPair(postscripts[6], postscripts[7], { stacked: true }));
-  // STORE closes the postscripts — the word alone, no courier line.
-  blocks.push(renderBanner({ word: 'Contra', href: SECTION_BANDS.contra.href, modifier: 'store-band' }));
-  // THE CONTRA MOVEMENT: the section's own row formation, three
-  // squares across, twice — reading from the reviews the rows above
-  // haven't already spent.
-  // The three reviews the postscript rows gave up come back here, so
-  // the section reads the most recent six IN SEQUENCE, top to bottom —
-  // contras[0] leads the first movement's row and is not repeated.
-  // contras[0] and [1] lead the first movement's rows and are not
-  // repeated; the section runs [2] onward, three to a row — TWO rows,
-  // six reviews. (A third ran to [11] and is retired: the movement
-  // closes on the second row now.)
-  blocks.push(renderContraTrio(contras.slice(2, 5)));
-  blocks.push(renderContraTrio(contras.slice(5, 8), { stacked: true }));
+  // EVERY ESSAY TURNED (2026-09-18): picture LEFT on the lead, then
+  // alternating — each card the mirror of what it was.
+  // TEN ROWS, AN ESSAY IN EACH (2026-09-30, at the user's word: remake
+  // the page without its section titles — ten rows, each an essay in
+  // landscape on the left or the right, alternating, beside a postscript
+  // or a review, alternating; every review square, every postscript
+  // portrait). The rows run newest first: row i's essay is essays[i],
+  // its companion the next postscript on the even rows and the next
+  // review on the odd (the other kind where one runs out). The companion
+  // holds its shape at the page's one height (--row-fa / --row-fb) and
+  // the essay takes the rest of the row (style.css, TEN ROWS). The
+  // sections' banners and THE LATEST's name are gone, so every row
+  // stands in the first movement.
+  // THE LATEST BESIDE THE ROWS (2026-10-03, at the user's word: "On the
+  // left ... a Garamond dek that says 'The Last Magazine' ... THE LATEST
+  // ON, then ... the kickers for the most recent posts ... On the right,
+  // there should be a big essay. Then the next line should have a
+  // Postscript and a Contra that sit next to each other. These lines
+  // should alternate"): the rows stand in the window's right three
+  // quarters, alternating — an essay alone across the whole column, then
+  // a postscript and a review side by side — newest first. The left
+  // quarter holds THE LATEST's rail (latestRailHtml, below; style.css,
+  // THE LATEST BESIDE THE ROWS).
+  // FOUR SECTIONS, EACH WITH ITS COLUMN (2026-10-04, at the user's word:
+  // "I want the latest to just be the latest six posts ... the essay card
+  // being full width, and then if there's a postscript or a contra, they
+  // should sit on their own line horizontally centered ... a new section
+  // for essays ... exactly like the latest section, except essays, the
+  // column would be on the left ... the same format with postscripts and
+  // contras ... three rows ... two per row ... in contra, the card should
+  // be square"): THE LATEST (the six newest posts of every kind, one to a
+  // row), then ESSAYS (the six newest, one to a row), POSTSCRIPT (six,
+  // two to a row at their own proportions, one height to a row) and
+  // CONTRA (six, two to a row, square), each beside its own blue column
+  // listing its posts — right, left, right, left. Every row keeps the one
+  // group, numbered down the page, so the fitter seats it as before; the
+  // section rides on the card (card--sec-*, card--rail-*, and
+  // card--sec-first on a section's first row, which stands 108 under the
+  // last section's ink: duo-panel-fit.js, SECTION_GAP). In ESSAYS,
+  // POSTSCRIPT and CONTRA the rows alternate their words' side and the
+  // way the preview slides ("In essay/contra/postscript sections, preview
+  // direction/text alignment should alternate"); in THE LATEST every card
+  // sets its words left and slides left, under the far margin
+  // (card--slide-l/-r, duo-panel-fit.js, THE SLIDE UNDER THE MARGIN).
+  const SEC_N = 6;
+  let rowsMade = 0;
+  const rowAt = (r, side, extra) => ({ g: 'rows', i: r, r, side, all: '', fixedAt: new Set(), ...extra });
+  const dated = (p) => p && p.date && !isNaN(p.date.getTime());
+  // (a post the homepage's lists do not hold — an editors' pick from the
+  // archive — takes its kind from any copy of it that names its section)
+  const labelOf = (p) => [p, ...pool.filter((q) => q && q.link === p.link)].map((q) => q.sectionLabel || '').join(' ');
+  const kindOf = (p) => postscripts.includes(p) ? 'postscript' : contras.includes(p) ? 'contra'
+    : /postscript/i.test(labelOf(p)) ? 'postscript' : /contra/i.test(labelOf(p)) ? 'contra' : 'essay';
+  // (a postscript's own proportions, width over height, read off the _WxH
+  // Substack writes into the file name — held between 3:5 and 5:4)
+  const ratioOf = (p) => {
+    const d = /_(\d+)x(\d+)\.[a-z]+$/i.exec(decodeURIComponent((p && p.image) || ''));
+    const k = d && +d[1] > 0 && +d[2] > 0 ? +d[1] / +d[2] : 0.8;
+    return Math.min(1.25, Math.max(0.6, k));
+  };
+  // (no post twice: each section's six are the newest of its kind not
+  // already in THE LATEST or among the editors' picks — "Have no repeats
+  // between sections")
+  const latestPosts = [...essays, ...postscripts, ...contras].filter(dated).sort((a, b) => b.date - a.date).slice(0, SEC_N);
+  // EDITORS' PICKS under CONTRA (2026-10-04, at the user's word: "Under
+  // contra section, add an Editor's Picks section. Use selections from the
+  // Archive Editor's picks"): the archive's own four (LEDGER_FEATURE_SLUGS)
+  // in the archive's order — the lead essay, the two postscripts as a
+  // pair, the closing essay.
+  // (from every post the build holds, the homepage's own objects first)
+  const bySlug = (slug) => [...essays, ...postscripts, ...contras, ...archives, ...pool].find((p) => p && slugOf(p.link) === slug) || null;
+  const pickRows = [[bySlug(LEDGER_FEATURE_SLUGS.lead)], LEDGER_FEATURE_SLUGS.pair.map(bySlug), [bySlug(LEDGER_FEATURE_SLUGS.close)]]
+    .map((r) => r.filter((p) => p && !latestPosts.includes(p))).filter((r) => r.length);
+  const taken = new Set([...latestPosts, ...pickRows.flat()]);
+  const fresh = (list) => list.filter((p) => p && !taken.has(p)).slice(0, SEC_N);
+  const ones = (list) => list.map((p) => [p]);
+  const SECTIONS = [
+    // (every column on the right since 2026-10-04 — "Switch it so all
+    // charcoal columns are on the right"; ESSAYS and CONTRA stood left)
+    // (and every column on the left since later that day — "move the latest
+    // column to the left")
+    // (and on the right again since 2026-10-05 — "Move The Latest to the
+    // right, and invert posts accordingly")
+    { key: 'latest', word: 'The Latest', href: 'archive.html', rail: 'r', rows: ones(latestPosts) },
+    { key: 'essays', word: 'Essays', href: 'archive.html#section=essays', rail: 'r', rows: ones(fresh(essays)) },
+    // (one to a row in every section now — "In postscript/contra sections,
+    // make one a row and editor's")
+    { key: 'postscript', word: 'Postscript', href: 'archive.html#section=postscript', rail: 'r', rows: ones(fresh(postscripts)) },
+    { key: 'contra', word: 'Contra', href: 'archive.html#section=contra', rail: 'r', rows: ones(fresh(contras)) },
+    { key: 'picks', word: 'Editors’ Picks', href: 'archive.html', rail: 'r', rows: ones(pickRows.flat()) },
+  ].filter((sec) => sec.rows.length);
+  SECTIONS.forEach((sec) => { sec.posts = sec.rows.flat(); });
+  const LABEL = { essay: 'Essays', postscript: 'Postscript', contra: 'Contra' };
+  // (a picture's widths per height: a postscript at its own, a review
+  // square — or a postscript alone, 4:5)
+  const kOf = (p, two) => { const k = kindOf(p); return k === 'postscript' ? (two ? ratioOf(p) : 0.8) : 1; };
+  SECTIONS.forEach((sec) => {
+    sec.rows.forEach((row, j) => {
+      const at = (side, extra) => rowAt(rowsMade, side, { sec: sec.key, rail: sec.rail, secFirst: j === 0 && rowsMade > 0, secLast: j === sec.rows.length - 1, ...extra });
+      // (a postscript and a review stand as an essay does, the row's width
+      // — "Postscript/contras should be aligned like essays", 2026-10-04)
+      const card = (p, side, extra) => {
+        const kind = kindOf(p);
+        const row = at(side, { solo: true, big: true, ka: 1.5, kb: 0.0001, ...extra });
+        return kind === 'essay'
+          ? renderMegaHero(p, { rev: true, label: 'Essays', trueHeight: true, row })
+          : renderMegaHero(p, { rev: true, label: LABEL[kind], kind, trueHeight: true, row });
+      };
+      if (row.length === 1) {
+        // (every section turns about row by row, the first row sliding away
+        // from the column, under the far margin)
+        // (THE LATEST turns about row by row too since 2026-10-04 — "should
+        // alternate side to side in The Latest"; every row the essay's
+        // proportions, 1, whatever its kind)
+        // (the page opening on a picture at the left, its words on the
+        // right, and turning about from there whichever side the column
+        // stands — "Start top of page with image on the left and text
+        // column on right. Alternate accordingly", 2026-10-04)
+        // (the page mirrored with the column on the right again: the picture
+        // at the right first, its words on the left — "Move The Latest to
+        // the right, and invert posts accordingly", 2026-10-05)
+        const toR = j % 2 === 0;
+        blocks.push(card(row[0], 'a', { solo: true, ka: 1, kb: 0.0001, alignR: toR, slide: toR ? 'r' : 'l' }));
+      } else {
+        // (a pair's two slide toward one another on its section's first
+        // row, over the mate, apart on the next, under the margins, and so
+        // on; each card's words on the side it slides away from)
+        const inward = j % 2 === 0;
+        const ka = kOf(row[0], true), kb = kOf(row[1], true);
+        blocks.push(card(row[0], 'a', { ka, kb, pairRow: true, alignR: !inward, slide: inward ? 'r' : 'l' }));
+        blocks.push(card(row[1], 'b', { ka, kb, pairRow: true, alignR: inward, slide: inward ? 'l' : 'r' }));
+      }
+      rowsMade++;
+    });
+  });
+  // EACH SECTION'S COLUMN: its name in the meta's Work Sans, under it the
+  // kicker of each of its posts in the order they stand, each to its post,
+  // its writer after it in the dek's Garamond italic — the name alone, or
+  // "w/" them for a postscript (a conversation) — and VIEW ALL under the
+  // list,
+  // to the archive (THE LATEST to all of it, the others to their section).
+  // The post standing in the window lights its line (latest-rail.js).
+  const railWord = (p) => stripEmMarkers(p.kicker || p.title || '');
+  // THE SECTION'S NAME DRAWN (2026-10-06, at the user's word — "Create
+  // SVGs for THE LATEST, ESSAYS, POSTSCRIPT, CONTRA too and replace the
+  // current work sans white title in the Latest Column with those / In the
+  // rachmaninoff font"): each word of the name is its drawing in the
+  // wordmark's lettering (assets/section-<word>.svg — its ink across, the
+  // flat cap 300 to the baseline, the round letters overshooting it), set
+  // at the cap of the meta's Work Sans (RAIL_CAP_EM) and sitting on its
+  // baseline, the words a space apart so the name still wraps between
+  // them (a word's apostrophe is in its drawing; the file is named by its
+  // letters — EDITORS’ in section-editors.svg). A name with a word not
+  // drawn keeps the text.
+  const RAIL_CAP_EM = 0.66;
+  const railSvg = (w) => {
+    const f = path.join(__dirname, 'assets', `section-${w.toLowerCase().replace(/[^a-z]/g, '')}.svg`);
+    if (!fs.existsSync(f)) return null;
+    const svg = fs.readFileSync(f, 'utf8').trim();
+    const vb = (svg.match(/viewBox="([^"]+)"/) || [])[1].split(/\s+/).map(Number);
+    return svg.replace(/ data-dip="[\d.]+"/, '').replace(/^<svg xmlns="[^"]*"/,
+      `<svg class="latest-rail__word" aria-hidden="true" focusable="false" style="width:${(RAIL_CAP_EM * vb[2] / vb[3]).toFixed(4)}em;height:${RAIL_CAP_EM}em"`);
+  };
+  // (THE LATEST BACK IN WORK SANS, 2026-10-06, at the user's word — "Turn
+  // the latest back to work sans": its name keeps the text, the other
+  // sections their drawings)
+  // (ALL THE NAMES BACK IN WORK SANS, 2026-10-06, at the user's word —
+  // "Turn the other section names back to Work Sans too": every name keeps
+  // its text; the drawings stay in assets/ should RAIL_DRAWN come back on)
+  const RAIL_DRAWN = false;
+  const railName = (word) => {
+    const svgs = RAIL_DRAWN ? word.split(/\s+/).map(railSvg) : [null];
+    if (svgs.some((s) => !s)) return `<p class="latest-rail__meta">${escapeHtml(word)}</p>`;
+    return `<p class="latest-rail__meta latest-rail__meta--drawn" role="img" aria-label="${escapeHtml(word)}">${svgs.join(' ')}</p>`;
+  };
+  const railHtml = (sec, si) => `\n  <aside class="latest-rail latest-rail--${sec.rail} latest-rail--${sec.key}" data-sec="${sec.key}" aria-label="${escapeHtml(sec.word)}"><div class="latest-rail__hold">${si === 0 ? railDot() : ''}<div class="latest-rail__in">`
+    + railName(sec.word)
+    + `<ul class="latest-rail__list">${sec.posts.map((p) => {
+      // (the writer's name alone since 2026-10-04 — "Remove all 'bys' from
+      // latest column. Keep w/"; "No keep authors. Just remove the word
+      // 'by'": a conversation's guest still "w/" them)
+      // (no credit in the column since 2026-10-04: "Remove the garamond
+      // italics from the right column")
+      return `<li><a href="${escapeHtml(p.link)}" data-slug="${escapeHtml(slugOf(p.link))}"><span class="latest-rail__kick">${escapeHtml(railWord(p))}</span></a></li>`;
+    }).join('')}</ul>`
+    + `<a class="latest-rail__all" href="${escapeHtml(sec.href)}">View all</a>`
+    + railCues(si)
+    + `</div></div></aside>`;
+  // THE NEXT SECTION FORETOLD (2026-10-04, at the user's words — "36px from
+  // the bottom in The Latest column, I want a work sans that's a
+  // premonition of the next section, so Essays. then on a line below a
+  // carrot pointing down. When you're in essays, the same should appear
+  // above for 'The Latest'"; "Carrot should be 36px from bottom, not
+  // label"): each section's words carry the next section's name over a
+  // caret pointing down at the column's foot, and the last's name under a
+  // caret pointing up at its head — each a way to that section's first
+  // card (latest-rail.js, THE COLUMN TAKES YOU TO THE CARD; style.css,
+  // THE NEXT SECTION FORETOLD).
+  function railCues(si) {
+    const caret = (up) => `<svg class="latest-rail__caret" viewBox="0 0 14 8" width="14" height="8" aria-hidden="true"><path d="${up ? 'M1 7L7 1L13 7' : 'M1 1L7 7L13 1'}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    const cue = (sec, dir) => {
+      const first = sec && sec.posts[0];
+      if (!first) return '';
+      const word = `<span class="latest-rail__cue-word">${escapeHtml(sec.word)}</span>`;
+      return `<a class="latest-rail__cue latest-rail__cue--${dir}" href="${escapeHtml(first.link)}" data-slug="${escapeHtml(slugOf(first.link))}" aria-label="${escapeHtml(sec.word)}">${dir === 'prev' ? caret(true) + word : word + caret(false)}</a>`;
+    };
+    // (the last section's foot foretells the colophon, and takes you to the
+    // page's end — "add a Colophon arrow in the latest column that takes
+    // you to the bottom of the site", 2026-10-05)
+    const colo = si === SECTIONS.length - 1
+      ? `<a class="latest-rail__cue latest-rail__cue--next" href="#colophon" data-to="colophon" aria-label="Colophon"><span class="latest-rail__cue-word">Colophon</span>${caret(false)}</a>`
+      : '';
+    return cue(SECTIONS[si - 1], 'prev') + (colo || cue(SECTIONS[si + 1], 'next'));
+  }
+  const latestRailHtml = SECTIONS.map((sec, si) => railHtml(sec, si)).join('');
+  const railPosts = SECTIONS.flatMap((sec) => sec.posts);
+  console.log(`ROWS ${rowsMade} (${SECTIONS.map((sec) => `${sec.key} ${sec.posts.length}`).join(', ')}; columns ${railPosts.length})`);
+  void SUBSCRIBE_ABOVE; void SUBSCRIBE_BELOW;
   // THE FOUR GROUNDS. Each movement stands on its own colour, and the
   // three chrome banners are the joins — a banner OPENS the movement
   // it heralds, so the ground changes on its own top edge, under the
@@ -2316,6 +3150,21 @@ function renderHomepage({ essays = [], postscripts = [], contras = [], archives 
   // paints the visible band as one gradient with hard stops, seated
   // off the banners themselves by rail-fix.js.
   const MOVEMENTS = ['latest', 'essays', 'postscript', 'contra'];
+  // THE ESSAYS STAND ON THE MARK (2026-09-22), AND THE REVIEWS: their
+  // movements carry .on-mark, and the sheet grounds each in the mark's
+  // colour from halfway up its own word's ink to halfway down the next
+  // word's — or, for the last movement, on to the page's foot, which
+  // takes the mark with it (renderPageFoot's onMark; style.css, THE
+  // ESSAYS STAND ON THE MARK). A class of its own rather than
+  // .m--essays, which the word pages give every movement after their
+  // first.
+  // (…ON THE CHARCOAL since THE SECTIONS ARE CHARCOAL, 2026-09-23; the
+  // latest and the postscripts stand on the white, and the colophon and
+  // the reprint under the reviews are white too.)
+  // (THE LATEST STANDS ON THE WHITE again, 2026-09-23: it was marked for
+  // an evening; the name's opening screen keeps its charcoal — style.css,
+  // THE LATEST STANDS ON THE WHITE.)
+  const ON_MARK = ['essays', 'contra'];
   let movement = 0;
   // EACH MOVEMENT IS A CONTAINER, opening on its SECTION BAND: the
   // band is sticky inside it, so it pins to the viewport's top while
@@ -2345,9 +3194,16 @@ function renderHomepage({ essays = [], postscripts = [], contras = [], archives 
   // pass under this one the way the wordmark does.
   const openMovement = (m) => {
     const head = m === 'latest'
-      ? `\n  ${renderSectionBand(m)}\n  <div class="head-seam" aria-hidden="true"></div>\n  <div class="head-field" aria-hidden="true"></div>\n  <div class="movement m--${m}">\n${renderHeader()}`
-      : `\n  <div class="movement m--${m}">`;
-    duoHtml += `${head}\n  <div class="movement-body">`; open = true;
+      ? `\n  ${renderSectionBand(m, { home: true })}\n  <div class="head-rail"><div class="rail-stack"><a class="wm-stack" href="#top" aria-label="The New Critic — to the top of the front page">${BIRD_STAMP}</a></div><div class="rail-line" aria-hidden="true"></div>${navStrip().replace('sub-ticker--foot sub-ticker--pin', 'sub-ticker--top').replace('<span class="sub-ticker-run">', `<span class="sub-ticker-run">${bandLogoHtml()}${themeChip()}`)}</div>\n  <div class="head-field" aria-hidden="true"></div>\n  <div class="movement m--${m}${ON_MARK.includes(m) ? ' on-mark' : ''}">\n${renderHeader()}`
+      : `\n  <div class="movement m--${m}${ON_MARK.includes(m) ? ' on-mark' : ''}">`;
+    // THE LATEST, over the first row (2026-09-23): the section's name in
+    // the body's Garamond, seated by the fitter (seatRowGaps) 36 under the
+    // head band, the first row 36 under it
+    // (the ticker stands in the rows now, under the band — 2026-09-24)
+    // (THE LATEST's name is struck with the sections' titles: TEN ROWS)
+    const lead = '';
+    railHere = m === 'latest';
+    duoHtml += `${head}\n  <div class="movement-body">${lead}`; open = true;
   };
   // EVERY MOVEMENT CLOSES ON AN EMPTY BAND — the section band's own
   // charcoal block, 80 tall, full bleed, with nothing in it: 48 under
@@ -2356,7 +3212,13 @@ function renderHomepage({ essays = [], postscripts = [], contras = [], archives 
   // closes it.
   // (The empty foot bands are retired: a movement closes on its body,
   // and the next banner overtakes the head band directly.)
-  const closeMovement = () => { if (open) { duoHtml += '\n  </div>\n  </div>'; open = false; } };
+  // (the rail stands last in the latest movement's body, out of the
+  // rows' flow — the sheet seats the first row as the body's first child)
+  let railHere = false;
+  // (and the room the colophon is drawn up over, so the last section's
+  // last row can hold at the window's foot while the colophon comes up
+  // over it — style.css, THE COLOPHON PULLS UP)
+  const closeMovement = () => { if (open) { duoHtml += `${railHere ? `\n  <div class="sec-tail" aria-hidden="true"></div>${latestRailHtml}` : ''}\n  </div>\n  </div>`; open = false; railHere = false; } };
   blocks.forEach((block, i) => {
     const isBanner = /class="page-banner/.test(block);
     const isWord = /class="ops-word/.test(block);
@@ -2392,14 +3254,15 @@ function renderHomepage({ essays = [], postscripts = [], contras = [], archives 
       // (The word's field and the section's own band are struck: the
       // masthead's band holds through the whole site, and the word
       // scrolls under it in the flow, its rows 72 under its feet.)
-      duoHtml += `\n  <div class="movement m--${m}">\n  ${block}\n  <div class="movement-body">`;
+      duoHtml += `\n  <div class="movement m--${m}${ON_MARK.includes(m) ? ' on-mark' : ''}">\n  ${block}\n  <div class="movement-body">`;
       open = true;
       return;
     }
     const m = MOVEMENTS[Math.min(movement, MOVEMENTS.length - 1)];
     if (!open) openMovement(m);
+    const secOf = /card--sec-(latest|essays|postscript|contra|picks)\b/.exec(block);
     duoHtml += `
-  <div class="wrap m--${m}">
+  <div class="wrap m--${m}${secOf ? ` wrap--sec wrap--sec-${secOf[1]}${/card--sec-last\b/.test(block) ? ' wrap--sec-end' : ''}` : ''}">
     ${block}
   </div>${last || nextIsWord ? '' : `\n  <div class="row-divider m--${m}"></div>`}`;
   });
@@ -2433,7 +3296,7 @@ function renderHomepage({ essays = [], postscripts = [], contras = [], archives 
   // last review row straight to the reprint. STACK stays declared
   // against its return.)
   void STACK;
-  duoHtml += renderPageFoot();
+  duoHtml += renderPageFoot(true, ON_MARK.includes(MOVEMENTS[Math.min(movement, MOVEMENTS.length - 1)]));
 
   return `<!doctype html>
 <html lang="en">
@@ -2451,16 +3314,16 @@ ${ogTags({
   })}
 <link rel="icon" href="favicon.png">
 ${leadPreload}
-<link rel="preload" href="fonts/ops-placard-bold.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preconnect" href="https://use.typekit.net" crossorigin>
 <link rel="preconnect" href="https://substackcdn.com">
 <link rel="stylesheet" href="https://use.typekit.net/fnn8swo.css">
 <link rel="stylesheet" href="style.css?v=${BUILD_STAMP}">
+<style>:root{--colo-span:${COLO_SPAN}}</style>
 ${renderFontGateScript()}
 ${renderImgFadeScript()}
 </head>
 <body>
-
+${renderStampDefs()}
 <a class="skip-link" href="#main">Skip to content</a>
 
 <!-- (The site header — the wordmark — stands INSIDE the first
@@ -2483,6 +3346,14 @@ ${renderImgFadeScript()}
 <nav class="dek-band dek-band--masthead" aria-label="Masthead line"></nav>
 
 <main id="main">
+
+  <!-- THE MARGINS TAKE THE ESSAYS' MARK: the two 72s painted in the
+       page from ESSAYS' ink middle to POSTSCRIPT's, over the window's
+       fixed margins (style.css, THE ESSAYS STAND ON THE MARK; seated
+       by seatMarkGutters). Ahead of the rows, never between two
+       movements, where it would part the pair .movement + .movement
+       pulls together. -->
+  <div class="mark-gutters" aria-hidden="true"></div>
 
   <div class="page-rows" id="top">
 ${duoHtml}
@@ -2508,12 +3379,18 @@ ${renderFooter()}
 ${renderCaterpillarScript()}
 ${renderFoilPourScript()}
 ${renderDuoPanelFitScript()}
+${renderRectClickScript()}
 ${renderCardOpenScript()}
 ${renderChromeOpenScript()}
 ${renderCoverColorScript()}
 ${renderCopyLinkScript()}
 ${renderLineDrawScript()}
 ${renderRailFixScript()}
+${renderBandMarkScript()}
+${renderLatestRailScript()}
+${renderEditModeScript()}
+${renderCoverCueScript()}
+${renderCardRevealScript()}
 </body>
 </html>`;
 }
@@ -2533,17 +3410,49 @@ ${renderRailFixScript()}
 // the body up over the charcoal ground. The cap holds the wait at
 // 1000ms — a slow or dead font host degrades to the old behaviour, a
 // fallback paint and one refit, rather than a blank page.
+// (Its commentary comes out at build time like the body scripts' —
+// slimJs — since 2026-09-24: half of the head's weight was the notes.)
 function renderFontGateScript() {
-  return `<style>html.fonts-loading body{opacity:0}body{transition:opacity .25s ease}</style>
+  return slimJs(`<style>html.fonts-loading body{opacity:0}body{transition:opacity .25s ease}</style>
 <script>
 (function () {
   var root = document.documentElement;
   // LIGHT OR DARK, before first paint: the stored choice, else light.
-  // THE GROUND: light, dark, or a colour of the reader's own (HEX,
-  // 2026-09-17). Light and dark are the two token sets in style.css;
-  // a hex colour is written straight onto the root as --g, with --k
-  // white or charcoal, whichever reads better on it (WCAG contrast).
+  // GHOST WHITE (2026-09-18): the one white on the site — the light
+  // ground and the dark ink.
   var WHITE = '#FFFFFF', CHARCOAL = '#121417';
+  // HEX SETS THE MARK, NOT THE GROUND (2026-09-21). The third word in
+  // the margin used to paint the page's ground in a colour of the
+  // reader's own, with the ink turned white on it. It names the
+  // HIGHLIGHT now: every yellow on the site reads one token, --nc-mark
+  // (style.css, THE MARK'S COLOUR IS ONE TOKEN), and a code typed here
+  // is written onto the root in its place. The ground is light or dark
+  // and nothing else; the mark rides over both and is kept separately,
+  // so turning the page over does not lose it.
+  // (YELLOW names the DEFAULT mark, whatever colour that is: the banana
+  // when this was written, the blue #1182c2 for a day, the banana
+  // again on the 22nd, #1184C4 from later that day, and the banana for
+  // good from the 25th, and #7886B4 for an hour on 2026-09-30, then the
+  // banana again that night, "Use FFE135 for hex", and #458BD7 from
+  // 2026-10-01, "Want highlight color to be 458bd7", and the banana again
+  // from 2026-10-04, "Change all blues to banana yellow", and #3B2923 later
+  // that day, "#3B2923. Use this as highlight color", then forest green,
+  // #228B22, "Use a forest green instead", then Dartmouth green, #00693E,
+  // "A dartmouth college green", then Pompeian red, #B03A2E, 2026-10-05,
+  // "What is a red that matches mediterranean blue?", then a lighter
+  // terracotta, #D9654F, "make the red a lighter so black stands out
+  // more", then #B03A2E again, "Revert to terracotta red", then
+  // Mediterranean blue, #1478A7, 2026-10-06, "change all terracottas to
+  // that blue. This should be one token", then hot pink, #FF69B4, "Use hot
+  // pink as the highlight color", then navy, #000080, "#000080 use this
+  // for highlight color", then the navy lightened, #1A1AB0, "Lighten the
+  // highlight blue", then dodger blue, #1E90FF, "I want highlight color
+  // to be 1E90FF", then red, #F01E2C, "use f01e2c for hex color", then Yves Klein
+  // blue, #002FA7, "use yves blue as the highlight color". It must match
+  // --nc-mark in style.css. Written in lower case, the form hexOf
+  // returns, so a reader typing the default's own code is sent home
+  // rather than stored — the banana's capitals never compared equal.)
+  var YELLOW = '#002fa7';
   var hexOf = function (v) {
     var m = /^\s*#?([0-9a-f]{3}|[0-9a-f]{6})\s*$/i.exec(v || '');
     if (!m) return null;
@@ -2551,6 +3460,13 @@ function renderFontGateScript() {
     if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
     return '#' + h;
   };
+  // THE INK ON THE BLOCK IS CHOSEN BY CONTRAST. On the yellow it is the
+  // charcoal, stated in the sheet; on a reader's colour it is whichever
+  // of the charcoal and the white reads better (WCAG relative
+  // luminance), so a navy or a black does not swallow the word it was
+  // put behind. (A hex GROUND gave this rule up and inked everything
+  // white; a block is a few words wide, and those words are the ones
+  // the reader is pointing at.)
   var lum = function (hex) {
     var c = [1, 3, 5].map(function (i) {
       var v = parseInt(hex.substr(i, 2), 16) / 255;
@@ -2558,51 +3474,118 @@ function renderFontGateScript() {
     });
     return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
   };
-  var inkFor = function (hex) {
-    var L = lum(hex), Lw = 1, Lc = lum(CHARCOAL);
-    var vsWhite = (Lw + 0.05) / (L + 0.05);
-    var vsCharcoal = (L + 0.05) / (Lc + 0.05);
-    return vsWhite >= vsCharcoal ? WHITE : CHARCOAL;
+  var inkOn = function (hex) {
+    var l = lum(hex);
+    var onWhite = (lum(WHITE) + 0.05) / (l + 0.05);
+    var onCharcoal = (l + 0.05) / (lum(CHARCOAL) + 0.05);
+    return onWhite > onCharcoal ? WHITE : CHARCOAL;
   };
   var setMeta = function (colour) {
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.content = colour;
   };
-  // Paints the choice: the attribute for the stylesheet, the two
-  // tokens inline for a hex ground (and cleared for the others).
-  var paint = function (mode, hex) {
-    if (mode === 'hex' && hex) {
-      var ink = inkFor(hex);
-      root.setAttribute('data-theme', 'hex');
-      root.style.setProperty('--g', hex);
-      root.style.setProperty('--k', ink);
-      // The highlight — the chosen word, every hover — is the OTHER of
-      // charcoal and white on a hex ground, not Yves: white ink takes
-      // charcoal, charcoal ink takes white.
-      root.style.setProperty('--yves', ink === WHITE ? CHARCOAL : WHITE);
-      setMeta(hex);
+  // THE LIGHT PAGE STANDS ON ONE GRAY (2026-09-24): its ground is one
+  // token in the sheet, --nc-ground (style.css, THE WHOLE PAGE STANDS ON
+  // ONE LIGHT GRAY), read here rather than restated, so the browser's
+  // own chrome takes the colour the page loads and rubber-bands in. (The
+  // sheet is linked above this script, which waits for it.)
+  var ground = function () {
+    var g = '';
+    try { g = getComputedStyle(root).getPropertyValue('--nc-ground').trim(); } catch (err) {}
+    return g || WHITE;
+  };
+  if (root.getAttribute('data-theme') !== 'dark') setMeta(ground());
+  // Paints the ground: light is the page's own, dark is written on the
+  // root. (The inline --g and --k a hex ground wrote are cleared for
+  // any page still carrying them from a view transition's old state.)
+  var paint = function (mode) {
+    root.style.removeProperty('--g');
+    root.style.removeProperty('--k');
+    root.style.removeProperty('--yves');
+    if (mode === 'dark') root.setAttribute('data-theme', 'dark');
+    else root.removeAttribute('data-theme');
+    setMeta(mode === 'dark' ? CHARCOAL : ground());
+  };
+  // Paints the mark: the reader's colour and the ink that stands on it,
+  // or — for no colour, or the yellow's own code — nothing at all, and
+  // the sheet's yellow and charcoal stand.
+  var mark = function (hex) {
+    if (hex && hex !== YELLOW) {
+      root.style.setProperty('--nc-mark', hex);
+      root.style.setProperty('--hl-ink', inkOn(hex));
+      // (the bands' words, black on the mark, white under the hand —
+      // turned over where the reader's colour is too dark for black)
+      var lightInk = inkOn(hex) === WHITE;
+      root.style.setProperty('--band-ink', lightInk ? '#FFFFFF' : '#000000');
+      root.style.setProperty('--band-hover', lightInk ? '#000000' : '#FFFFFF');
     } else {
-      root.style.removeProperty('--g');
-      root.style.removeProperty('--k');
-      root.style.removeProperty('--yves');
-      // Light is the page's own; dark is written on the root.
-      if (mode === 'dark') root.setAttribute('data-theme', 'dark');
-      else root.removeAttribute('data-theme');
-      setMeta(mode === 'dark' ? CHARCOAL : WHITE);
+      root.style.removeProperty('--nc-mark');
+      root.style.removeProperty('--hl-ink');
+      root.style.removeProperty('--band-ink');
+      root.style.removeProperty('--band-hover');
     }
   };
-  var store = function (mode, hex) {
+  var store = function (mode) {
+    try { localStorage.setItem('nc-mode', mode); } catch (err) {}
+  };
+  var storeMark = function (hex) {
     try {
-      localStorage.setItem('nc-theme', mode);
-      if (hex) localStorage.setItem('nc-hex', hex);
+      if (hex && hex !== YELLOW) localStorage.setItem('nc-accent', hex);
+      else localStorage.removeItem('nc-accent');
     } catch (err) {}
   };
-  var storedHex = null;
+  var accent = null;
   try {
     var theme = localStorage.getItem('nc-theme');
-    storedHex = hexOf(localStorage.getItem('nc-hex'));
-    if (theme === 'hex' && storedHex) paint('hex', storedHex);
-    else if (theme === 'light' || theme === 'dark') paint(theme);
+    // THE READERS WHO STOOD ON A HEX GROUND come back to the light page,
+    // which is the default, and their stored ground is NOT carried over
+    // as a mark: it was chosen (or handed out — the slate #556677) to be
+    // stood on in white ink, and as a highlight it is a colour nobody
+    // picked. The old keys are struck so this runs once.
+    if (theme === 'hex') {
+      theme = 'light';
+      try {
+        localStorage.setItem('nc-theme', 'light');
+        localStorage.removeItem('nc-hex');
+        localStorage.removeItem('nc-hex-auto');
+      } catch (e2) {}
+    }
+    // (THE MODE WORDS ARE STRUCK, 2026-09-23: with no toggle left a
+    // stored choice was not applied.) DARK IS THE DEFAULT (2026-09-24,
+    // at the user's word): the page stands on the charcoal, the words
+    // white; the Light · Dark toggle beside the wordmark turns it over,
+    // and a reader's stored Light is kept.
+    // (A NEW KEY, nc-mode: a Light stored under nc-theme by the old
+    // margin words — or written by the hex readers' move home above —
+    // predates the dark default and is not a choice made against it.)
+    var chosen = null;
+    try { chosen = localStorage.getItem('nc-mode'); } catch (e3) {}
+    // (LIGHT IS THE DEFAULT on design/stacked-wordmark, at the user's word —
+    // "have default site color be white": the page stands on white, a
+    // reader's stored Dark kept)
+    // (THE CIRCLE IS STRUCK, 2026-10-04 — "Remove color change dot": with
+    // no way to turn the page over, a stored Dark is not applied, as when
+    // the mode words were struck)
+    // (CHARCOAL IS THE DEFAULT AGAIN, and the circle back in the band,
+    // 2026-10-04, at the user's words — "Turn the whole site to charcoal";
+    // "Add dot back in top band to light/dark toggle": the page stands on
+    // the charcoal, a reader's stored Light kept)
+    // (LIGHT THE DEFAULT AGAIN, 2026-10-06 — "Dot is inert": the page had
+    // stood white on either side, so it opens on the light side, as it has
+    // looked, and the dot turns it to the charcoal; a reader's stored Dark
+    // kept)
+    paint(chosen === 'dark' ? 'dark' : 'light');
+  } catch (e) {}
+  // (THE READER'S COLOUR came back on the next visit from 2026-09-30;
+  // HEX IS STRUCK, 2026-10-01, at the user's word, so a colour kept from
+  // it is let go rather than painted with no way home)
+  try { localStorage.removeItem('nc-accent'); } catch (e) {}
+  // A LOOK WITHOUT A CHANGE (2026-09-18): ?hex=888899 in the address
+  // paints that mark for this view only — nothing is stored, and the
+  // reader's own choice stands on the next plain visit.
+  try {
+    var qHex = hexOf(new URLSearchParams(location.search).get('hex'));
+    if (qHex) mark(qHex);
   } catch (e) {}
   // THE FLIP IS ONE CROSSFADE OF THE WHOLE PAGE (2026-09-17, later):
   // where the browser has view transitions the old page and the new
@@ -2613,9 +3596,9 @@ function renderFontGateScript() {
   // snapshot is the settled page). Elsewhere the per-element ease
   // above stands in.
   var flipTimer = null;
-  var flip = function (mode, hex) {
-    store(mode, hex);
-    var change = function () { paint(mode, hex); };
+  var flip = function (mode) {
+    store(mode);
+    var change = function () { paint(mode); };
     if (document.startViewTransition) {
       root.classList.add('theme-instant');
       var done = function () { root.classList.remove('theme-instant'); };
@@ -2637,21 +3620,25 @@ function renderFontGateScript() {
     change();
   };
   var current = function () {
-    var t = root.getAttribute('data-theme');
-    return t === 'dark' || t === 'hex' ? t : 'light';
+    return root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
   };
   // THE HEX FIELD: a courier line under the three words, shown on HEX
   // and hidden on Enter, Escape or leaving it. A valid code paints the
-  // page as it is typed (no dissolve keystroke by keystroke — the
-  // transitions are simply held off for the change); an invalid one
-  // paints nothing.
+  // mark as it is typed (the transitions are simply held off for the
+  // change); an invalid one paints nothing; and a field EMPTIED gives
+  // the yellow back, which is the only way home short of typing its
+  // code.
   var field = null;
-  var openField = function () {
-    field = field || document.querySelector('.theme-hex');
+  var openField = function (b) {
+    // (the field beside the toggle that was clicked — the strip's on
+    // the front page — else the first on the page)
+    field = (b && b.parentNode && b.parentNode.querySelector('.theme-hex')) || document.querySelector('.theme-hex');
     if (!field) return;
-    field.value = storedHex || '';
+    field.value = accent || YELLOW;
     field.hidden = false;
-    field.focus();
+    // (no scroll: the strip clips, and a focus scrolling the field into
+    // view slid the strip's words up out of it)
+    try { field.focus({ preventScroll: true }); } catch (err) { field.focus(); }
     // The caret at the end of the code, nothing highlighted: the
     // field opens to be typed into, not swept.
     try { var n = field.value.length; field.setSelectionRange(n, n); } catch (err) {}
@@ -2660,25 +3647,25 @@ function renderFontGateScript() {
     if (field) field.hidden = true;
   };
   var typed = function () {
-    var hex = hexOf(field.value);
-    if (!hex) return;
-    storedHex = hex;
+    var bare = /^\s*#?\s*$/.test(field.value);
+    var hex = bare ? null : hexOf(field.value);
+    if (!hex && !bare) return;
+    accent = hex && hex !== YELLOW ? hex : null;
     root.classList.add('theme-instant');
-    paint('hex', hex);
-    store('hex', hex);
+    mark(accent);
+    storeMark(accent);
     setTimeout(function () { root.classList.remove('theme-instant'); }, 50);
   };
+  // HEX IS NOT A THIRD GROUND: the word opens its field and changes
+  // nothing until a code is typed. Light and Dark turn the page over
+  // and leave the mark where it is.
   document.addEventListener('click', function (e) {
     var b = e.target && e.target.closest && e.target.closest('.theme-toggle');
     if (!b) return;
     var t = e.target.closest('.theme-toggle-light, .theme-toggle-dark, .theme-toggle-hex');
-    var mode = t ? (t.classList.contains('theme-toggle-light') ? 'light' : t.classList.contains('theme-toggle-dark') ? 'dark' : 'hex')
+    if (t && t.classList.contains('theme-toggle-hex')) { openField(b); return; }
+    var mode = t ? (t.classList.contains('theme-toggle-light') ? 'light' : 'dark')
       : (current() === 'light' ? 'dark' : 'light');
-    if (mode === 'hex') {
-      openField();
-      if (storedHex && current() !== 'hex') flip('hex', storedHex);
-      return;
-    }
     closeField();
     if (mode !== current()) flip(mode);
   });
@@ -2703,7 +3690,7 @@ function renderFontGateScript() {
   // or picture host: after eight seconds the page lifts with what it
   // has rather than never.
   var shown = false;
-  var gate = { fonts: 0, covers: 0, lifted: 0 };
+  var gate = { fonts: 0, covers: 0, fitted: 0, lifted: 0 };
   try { window.__ncGate = gate; } catch (err) {}
   // THE SAME FADE ON A CLICK AS ON A COLD LOAD (2026-09-17, later).
   // Chrome holds the OLD page's pixels on a same-site navigation until
@@ -2730,7 +3717,14 @@ function renderFontGateScript() {
       lifted = true;
       gate.lifted = performance.now();
       root.classList.remove('fonts-loading');
-      setTimeout(function () { root.classList.add('page-shown'); }, 400);
+      setTimeout(function () {
+        root.classList.add('page-shown');
+        // The fade is over: the fitter may take the thread for the rest
+        // of the page (src/duo-panel-fit.js, THE PAGE IS FITTED IN TWO
+        // STAGES) without stalling the dissolve the reader is watching.
+        try { window.__ncShown = true; } catch (err) {}
+        try { window.dispatchEvent(new Event('newcritic:shown')); } catch (err) {}
+      }, 400);
     };
     // Two frames past ready, so the fitters (which run on fonts.ready)
     // have laid the page out before it is seen.
@@ -2744,22 +3738,110 @@ function renderFontGateScript() {
     var f = document.fonts;
     if (!f || !f.load) { resolve(); return; }
     Promise.all([
-      f.load('700 100px "OPS Placard"'),
+      f.load('700 100px helvetica-neue-lt-pro'),
+      f.load('400 100px helvetica-neue-lt-pro'),
+      f.load('italic 400 100px futura-pt'),
+      // The meta's face, self-hosted since 2026-10-01 (was Courier).
+      f.load('400 100px "Work Sans"'),
       f.load('400 100px garamond-premier-pro'),
       f.load('italic 400 100px garamond-premier-pro'),
+      f.load('700 100px garamond-premier-pro'), // the corner box's price
       f.load('400 100px trajan-pro-3'),
       f.load('700 100px trajan-pro-3')
     ]).then(function () { return f.ready; }).then(resolve, resolve);
-  }).then(function () { gate.fonts = performance.now(); });
-  // THE COVERS: every cover on the page, loaded (or failed) and then
-  // decoded, so the first paint has their pixels ready.
+  }).then(function () {
+    gate.fonts = performance.now();
+    // Said out loud for the fitter (src/duo-panel-fit.js), which holds
+    // its first pass for the faces and cannot ask this promise itself:
+    // a flag for a listener that arrives late, an event for one that
+    // is already waiting.
+    try { window.__ncFontsIn = true; } catch (err) {}
+    try { window.dispatchEvent(new Event('newcritic:fontsin')); } catch (err) {}
+  });
+  // THE COVERS: the ones the page HOLDS for, loaded (or failed) and then
+  // decoded, so the first paint has their pixels ready. That was every
+  // cover on the page and is the front page's first three now, marked
+  // at build time (build.js, holdFirstCovers); the rest are lazy and
+  // fade up as they land. A page that marks none holds for none.
+  var HOLD = 'img.card-image[data-hold]';
+  // ONLY A COVER THE FIRST SCREEN SHOWS HOLDS IT (2026-09-24). The page
+  // opens on the masthead standing a whole window tall (src/chrome-
+  // open.js), so the three first covers are all below the fold when the
+  // page is shown — and their cards stand unseen until the whole page is
+  // fitted and each has its picture decoded (src/card-reveal.js). The
+  // lift waited out a megabyte and a half of pictures no reader could
+  // see yet, sharing the line with the faces the masthead is set in.
+  // The three are still asked for first; the gate holds only for those
+  // whose box meets the window when it looks (none, on a fresh visit).
+  var held = function () {
+    var vh = window.innerHeight || document.documentElement.clientHeight;
+    return [].filter.call(document.querySelectorAll(HOLD), function (img) {
+      var r = img.getBoundingClientRect();
+      return r.bottom > 0 && r.top < vh && r.width > 0;
+    });
+  };
+  // AND THE FIRST COVERS WAIT FOR THE FACES (2026-09-24). Asked for at
+  // the head of the load, the three came down beside the faces and took
+  // the larger part of the line from them — a megabyte and a half
+  // against half a megabyte of type — so on an ordinary phone line the
+  // masthead's faces landed a third of a second later than they would
+  // alone, and the page with them (measured at 1440 on a 9 Mbps line:
+  // faces 1.47s with the covers, 1.14s without). The faces are what the
+  // first screen is set in; the covers are not seen until the page is
+  // fitted whole, seconds later. So the three are printed lazy (the
+  // browser's look-ahead leaves a lazy picture alone), their sources are
+  // lifted off here as the parser lays them down — before any layout
+  // could ask for them — and handed back the moment the faces are in,
+  // asked for at once. Without script they are ordinary lazy pictures.
+  var parked = [];
+  var park = function (img) {
+    if (img.__ncParked || unparked) return;
+    img.__ncParked = true;
+    ['srcset', 'src'].forEach(function (a) {
+      var v = img.getAttribute(a);
+      if (v != null) { img.setAttribute('data-nc-' + a, v); img.removeAttribute(a); }
+    });
+    parked.push(img);
+  };
+  var unparked = false;
+  var unpark = function () {
+    if (unparked) return;
+    unparked = true;
+    if (mo) mo.disconnect();
+    parked.forEach(function (img) {
+      img.loading = 'eager';
+      ['srcset', 'src'].forEach(function (a) {
+        var v = img.getAttribute('data-nc-' + a);
+        if (v != null) { img.setAttribute(a, v); img.removeAttribute('data-nc-' + a); }
+      });
+      img.__ncParked = false;
+    });
+    parked = [];
+  };
+  var mo = window.MutationObserver ? new MutationObserver(function (recs) {
+    for (var i = 0; i < recs.length; i++) {
+      var added = recs[i].addedNodes;
+      for (var k = 0; k < added.length; k++) {
+        var n = added[k];
+        if (n.nodeType !== 1) continue;
+        if (n.matches(HOLD)) park(n);
+        else if (n.firstElementChild) [].forEach.call(n.querySelectorAll(HOLD), park);
+      }
+    }
+  }) : null;
+  if (mo) {
+    mo.observe(root, { childList: true, subtree: true });
+    fontsDone.then(unpark, unpark);
+    // never parked for long, whatever the faces do
+    setTimeout(unpark, 2500);
+  }
   var coversDone = new Promise(function (resolve) {
     var settle = function () {
       // The decode is asked for, not waited on past a beat: a hidden
       // tab decodes nothing until it is shown (its decode() promises
       // simply hang), and a page opened in the background should not
       // stand blank for the cap once it is brought forward.
-      var imgs = [].slice.call(document.querySelectorAll('img.card-image'));
+      var imgs = held();
       if (document.visibilityState === 'hidden') { resolve(); return; }
       var decodes = imgs.map(function (img) {
         return img.decode ? img.decode().catch(function () {}) : Promise.resolve();
@@ -2768,8 +3850,8 @@ function renderFontGateScript() {
       Promise.race([Promise.all(decodes), beat]).then(resolve, resolve);
     };
     var pending = function () {
-      var imgs = document.querySelectorAll('img.card-image');
-      for (var i = 0; i < imgs.length; i++) if (!imgs[i].complete) return true;
+      var imgs = held();
+      for (var i = 0; i < imgs.length; i++) if (!imgs[i].complete || imgs[i].__ncParked) return true;
       return false;
     };
     var watch = function () {
@@ -2787,14 +3869,29 @@ function renderFontGateScript() {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watch);
     else watch();
   }).then(function () { gate.covers = performance.now(); });
-  Promise.all([fontsDone, coversDone]).then(go, go);
+  // THE FIT: the page laid out whole before it is shown. This used to
+  // be free — the fitters' first pass ran synchronously during parse,
+  // so the parser could not reach the end of the body (and neither
+  // promise above could settle) until the page was fitted. That pass
+  // is struck (src/duo-panel-fit.js: it measured fallback metrics and
+  // was thrown away entire by the pass that followed the fonts), and
+  // the guarantee is held here instead: the fitter announces its first
+  // completed pass and the gate waits for it. The flag is checked
+  // before the listener because this runs in the HEAD, long before the
+  // fitter has parsed — but also long before it could have announced,
+  // so the listener is what actually answers on every real load.
+  var fitDone = new Promise(function (resolve) {
+    if (window.__ncFitDone) { resolve(); return; }
+    addEventListener('newcritic:fitdone', function () { resolve(); }, { once: true });
+  }).then(function () { gate.fitted = performance.now(); });
+  Promise.all([fontsDone, coversDone, fitDone]).then(go, go);
   setTimeout(go, 8000);
   // Pulled back by the reader (the back/forward cache restores the
   // page whole, with its class already lifted): nothing to do — but a
   // page restored still held is let go at once.
   addEventListener('pageshow', function (e) { if (e.persisted) { shown = true; reveal(); } });
 })();
-</script>`;
+</script>`);
 }
 
 // The held head — the mini-rail and the hero's courier line hold at 48
@@ -2806,11 +3903,63 @@ ${js}
 </script>`;
 }
 
+// THE WORDMARK'S MINIATURE IN THE BAND — the date goes as the
+// wordmark's ink touches the pinned band's rule, and a miniature of
+// the name descends into the band as the ink passes under, settling
+// centred when the feet have gone (src/band-mark.js).
+function renderBandMarkScript() {
+  const js = slimJs(fs.readFileSync(path.join(__dirname, 'src/band-mark.js'), 'utf8'));
+  return `<script>
+${js}
+</script>`;
+}
+
+// THE EDIT MODE (?edit): drag a picture's corner to size it, and save
+// the sizes into layout-overrides.json through the dev server
+// (src/edit-mode.js; inert without ?edit).
+function renderEditModeScript() {
+  const js = slimJs(fs.readFileSync(path.join(__dirname, 'src/edit-mode.js'), 'utf8'));
+  return `<script>
+${js}
+</script>`;
+}
+
+// READ NOW RIDES WITH THE POINTER over a cover, inside the picture's
+// own outline, tucking under the hand where the frame's edge is close
+// (src/cover-cue.js). The grey the cover takes under the hand is the
+// stylesheet's; this is the errand said out loud beside it.
+function renderCoverCueScript() {
+  const js = slimJs(fs.readFileSync(path.join(__dirname, 'src/cover-cue.js'), 'utf8'));
+  return `<script>
+${js}
+</script>`;
+}
+
+// EACH CARD ARRIVES WHOLE: a front-page card fades in as one — picture,
+// courier and title — as the reader scrolls it into the window, its
+// picture fetched and decoded before it is shown (src/card-reveal.js;
+// style.css, EACH CARD ARRIVES WHOLE).
+// THE LATEST'S RAIL RIDES UP WITH THE ROWS (src/latest-rail.js)
+function renderLatestRailScript() {
+  const js = slimJs(fs.readFileSync(path.join(__dirname, 'src/latest-rail.js'), 'utf8'));
+  return `<script>
+${js}
+</script>`;
+}
+
+function renderCardRevealScript() {
+  const js = slimJs(fs.readFileSync(path.join(__dirname, 'src/card-reveal.js'), 'utf8'));
+  return `<script>
+${js}
+</script>`;
+}
+
 // A post card opens on its COVER and closes only when the pointer leaves
 // the card entirely (src/card-open.js) — a state :has() cannot express,
 // having no memory of how it began.
 function renderCardOpenScript() {
-  const js = slimJs(fs.readFileSync(path.join(__dirname, 'src/card-open.js'), 'utf8'));
+  const js = slimJs(fs.readFileSync(path.join(__dirname, 'src/card-open.js'), 'utf8'))
+    + '\n' + slimJs(fs.readFileSync(path.join(__dirname, 'src/essay-acts.js'), 'utf8'));
   return `<script>
 ${js}
 </script>`;
@@ -2831,8 +3980,11 @@ ${js}
 // shell pages (about, give, archive) have none, so this stays out of
 // renderPageShell's fixed script set.
 function renderDuoPanelFitScript() {
+  // (the :has() answers ride ahead of the fitter: src/structure-classes.js)
+  const structure = slimJs(fs.readFileSync(path.join(__dirname, 'src/structure-classes.js'), 'utf8'));
   const js = slimJs(fs.readFileSync(path.join(__dirname, 'src/duo-panel-fit.js'), 'utf8'));
   return `<script>
+${structure}
 ${js}
 </script>`;
 }
@@ -2893,6 +4045,52 @@ ${js}
 // all of them.
 function renderFoilPourScript() {
   const js = slimJs(fs.readFileSync(path.join(__dirname, 'src/foil-pour.js'), 'utf8'));
+  return `<script>
+${js}
+</script>`;
+}
+
+// THE SUBSCRIBE BOX (2026-09-19): the yellow panel in the bottom right
+// corner of every page — the About page's own pitch, SUBSCRIBE in the
+// title face's capitals over it, and the archive ledger's X (the same
+// 20 viewBox and the same two strokes at 1.6 as .arch-clear-x) in the
+// corner opposite. Ships HIDDEN and is dealt by src/subscribe-box.js,
+// which also decides what shuts it: a reader with no JavaScript is
+// never handed a panel they could not shut.
+// (STRUCK FROM THE PAGES, 2026-09-23: the subscribe ticker under the
+// head band asks instead — subTicker. Kept for its markup and script.)
+function renderSubscribeBox() {
+  return `
+<aside class="sub-box" aria-label="Subscribe to The New Critic" hidden>
+  <p class="sub-box-head">
+    <a class="sub-box-word" href="${SITE_URL}/subscribe" rel="noopener">Subscribe</a>
+    <button class="sub-box-x" type="button" aria-label="Dismiss">
+      <svg viewBox="0 0 20 20" width="12" height="12" aria-hidden="true" focusable="false"><path d="M4 4l12 12M16 4L4 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+  </p>
+  <div class="sub-box-body">
+    <p>${SUBSCRIBE_PITCH_HTML}</p>
+    <ol class="sub-box-list">
+${SUBSCRIBE_GETS.map((g) => `      <li>${g}</li>`).join('\n')}
+    </ol>
+  </div>
+</aside>`;
+}
+
+function renderSubscribeBoxScript() {
+  const js = slimJs(fs.readFileSync(path.join(__dirname, 'src/subscribe-box.js'), 'utf8'));
+  return `<script>
+${js}
+</script>`;
+}
+
+// THE WHOLE TITLE-AND-DEK RECTANGLE OPENS THE POST (src/rect-click.js).
+// It reads the union the fitter writes (--tx-* on the title) and tests
+// a click against it, so the half of the mark that is the dek is a way
+// in like the half that is the title. Ships after the fitter, which is
+// what writes the offsets it reads.
+function renderRectClickScript() {
+  const js = slimJs(fs.readFileSync(path.join(__dirname, 'src/rect-click.js'), 'utf8'));
   return `<script>
 ${js}
 </script>`;
@@ -2962,7 +4160,49 @@ function markMega(html) {
     .replace(/<body(\s[^>]*)?>/, (m, attrs) => /class="/.test(attrs || '')
       ? m.replace('class="', 'class="has-mega ')
       : `<body${attrs || ''} class="has-mega">`)
-    .replace('<main id="main">', '<main id="main" class="has-mega">');
+    .replace('<main id="main">', '<main id="main" class="has-mega wm-opening wm-banded">');
+}
+
+// ---------- THREE COVERS HOLD THE PAGE, NOT TWENTY-THREE (2026-09-21) ----
+// Every cover was `loading="eager"` and the gate in the head held the
+// page at opacity 0 until ALL of them had loaded and decoded — the six
+// reviews five screens down included. Measured on a retina laptop that
+// is eight to twelve megabytes standing between the reader and the
+// masthead: invisible on a fast line, where the covers beat the fitter
+// home, and the whole of the wait on an ordinary one, up to the gate's
+// eight-second cap.
+//   The front page now holds for its FIRST THREE covers — the hero and
+// the pair under it, which is what a reader opens on — and marks them
+// (data-hold) for the gate to find; those three are asked for first
+// (fetchpriority high). Every other cover is `loading="lazy"`: the
+// browser fetches it as the reader comes near, and src/img-fade.js
+// already fades a late cover up on arrival, so it lands the way a cover
+// always has. It is safe for the fitter, which was the worry: the
+// covers' boxes are CSS-sized (not one <img> carries a width or height),
+// and the page was measured with every cover BLOCKED against the page
+// with them all loaded — seventeen values apart, inside the seventy-
+// three that two identical loads differed by. A cover arriving moves
+// nothing the fitter reads.
+//   Decided here, on the assembled page, because "the first three" is a
+// fact about document order and no card renderer knows where it stands.
+// The word pages hold for no cover at all: theirs sit below the ledger
+// and the mosaic, and holding the page for those was never the intent.
+// The ticker's covers are left as they are (see the note at the strip:
+// lazy cannot work inside one clipped 26,500px box).
+function holdFirstCovers(html, filename) {
+  let held = 0;
+  const hold = filename === 'index.html' ? 3 : 0;
+  return html.replace(/<img class="card-image"([^>]*)>/g, (tag, rest) => {
+    if (!/\sloading="eager" fetchpriority="(?:low|high)"/.test(rest)) return tag;
+    if (held < hold) {
+      held++;
+      // (lazy in the markup since 2026-09-24, so the browser's look-
+      // ahead leaves them for the gate to ask for once the faces are in:
+      // renderFontGateScript, THE FIRST COVERS WAIT FOR THE FACES)
+      return `<img class="card-image" data-hold${rest.replace(/\sloading="eager" fetchpriority="(?:low|high)"/, ' loading="lazy" fetchpriority="high"')}>`;
+    }
+    return `<img class="card-image"${rest.replace(/\sloading="eager" fetchpriority="(?:low|high)"/, ' loading="lazy"')}>`;
+  });
 }
 
 function renderPageShell({ currentKey, title, description, bodyHtml, extraScripts = '', bodyClass = '', ogImage, bare = false }) {
@@ -2976,16 +4216,16 @@ function renderPageShell({ currentKey, title, description, bodyHtml, extraScript
 <meta name="description" content="${escapeHtml(description)}">` : ''}
 ${ogTags({ title: `${title} — ${SITE_NAME}`, description, pagePath: `/${currentKey}.html`, image: ogImage })}
 <link rel="icon" href="favicon.png">
-<link rel="preload" href="fonts/ops-placard-bold.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preconnect" href="https://use.typekit.net" crossorigin>
 <link rel="preconnect" href="https://substackcdn.com">
 <link rel="stylesheet" href="https://use.typekit.net/fnn8swo.css">
 <link rel="stylesheet" href="style.css?v=${BUILD_STAMP}">
+<style>:root{--colo-span:${COLO_SPAN}}</style>
 ${renderFontGateScript()}
 ${renderImgFadeScript()}
 </head>
 <body${bodyClass ? ` class="${bodyClass}"` : ''}>
-
+${renderStampDefs()}
 <a class="skip-link" href="#main">Skip to content</a>
 
 ${bare ? '' : renderHeader(currentKey)}
@@ -2997,7 +4237,8 @@ ${bodyHtml}
 ${bare ? '' : renderFooter()}
 
 ${renderCaterpillarScript()}
-${renderFoilPourScript()}${extraScripts ? `\n${extraScripts}` : ''}
+${renderFoilPourScript()}
+${renderRectClickScript()}${extraScripts ? `\n${extraScripts}` : ''}
 </body>
 </html>`;
 }
@@ -3008,12 +4249,12 @@ ${renderFoilPourScript()}${extraScripts ? `\n${extraScripts}` : ''}
 // (card--trio), contra as three-across small squares (card--quad styling —
 // same look as the homepage's quad row, one cell fewer per row).
 const LIST_ROWS = {
-  essays: { perRow: 2, extraClass: '', tag: 'From the Essay', btnLabel: 'Essays', btnHref: 'essays.html' },
-  postscript: { perRow: 3, extraClass: 'card--trio', tag: 'From the Interview', btnLabel: 'Postscript', btnHref: 'postscript.html' },
+  essays: { perRow: 2, extraClass: '', tag: 'From the Essay', btnLabel: 'Essays', btnHref: 'archive.html#section=essays' },
+  postscript: { perRow: 3, extraClass: 'card--trio', tag: 'From the Interview', btnLabel: 'Postscript', btnHref: 'archive.html#section=postscript' },
   // card--quad-open lifts the homepage quad's hide-the-excerpt rules —
   // these cells are a third wider than the homepage's four-across squares,
   // wide enough to open on the review's first paragraph (see style.css).
-  contra: { perRow: 3, extraClass: 'card--quad card--quad-open', tag: 'From the Review', btnLabel: 'Contra', btnHref: 'contra.html' },
+  contra: { perRow: 3, extraClass: 'card--quad card--quad-open', tag: 'From the Review', btnLabel: 'Contra', btnHref: 'archive.html#section=contra' },
 };
 
 // The Contra! manifesto AS EDITED for the page (hand-tuned copy handed
@@ -3149,7 +4390,7 @@ function renderEssaysPage({ currentKey, label, posts }) {
   // likes bottom-right. False gave this page its own cut — the topic
   // repeated as a chip in the byline, the share up beside it, and the
   // cover credit closing the band.
-  const cellHtml = (p, i) => `<div class="ps-hero-cell" data-idx="${i}"${i === newestIdx ? '' : ' hidden'}>${renderDuoHalf(p, { tag: 'From the Essay', btnLabel: label, btnHref: 'essays.html', sectionBtn: true, restChipArt: true }, 'duo-half--wide')}</div>`;
+  const cellHtml = (p, i) => `<div class="ps-hero-cell" data-idx="${i}"${i === newestIdx ? '' : ' hidden'}>${renderDuoHalf(p, { tag: 'From the Essay', btnLabel: label, btnHref: 'archive.html#section=essays', sectionBtn: true, restChipArt: true }, 'duo-half--wide')}</div>`;
   // Date, then topic, then writer. Each span keeps the class that names
   // what it holds — -name is the person, -dek the date — so only the
   // order moves here; which line is italic and which takes the Klein is
@@ -3180,7 +4421,7 @@ function renderEssaysPage({ currentKey, label, posts }) {
     title: label,
     bodyHtml,
     ogImage: posts.find((p) => p.image)?.image,
-    extraScripts: renderDuoPanelFitScript() + renderCoverColorScript() + renderCopyLinkScript() + renderLineDrawScript()
+    extraScripts: renderDuoPanelFitScript() + renderCoverColorScript() + renderCopyLinkScript() + renderLineDrawScript() + renderCoverCueScript()
       + renderPostscriptIndexScript(),
   });
 }
@@ -3284,7 +4525,7 @@ ${headHtml}${rows
     bodyHtml,
     // The section's newest cover becomes its share card.
     ogImage: posts.find((p) => p.image)?.image,
-    extraScripts: renderDuoPanelFitScript() + renderCoverColorScript() + renderCopyLinkScript() + renderLineDrawScript()
+    extraScripts: renderDuoPanelFitScript() + renderCoverColorScript() + renderCopyLinkScript() + renderLineDrawScript() + renderCoverCueScript()
       + (headHtml ? renderContraFilterScript() : ''),
   });
 }
@@ -3342,7 +4583,7 @@ function renderPostscriptPage({ currentKey, label, posts }) {
   // goes back to the band with it (showArtInBand defaults true), where
   // every other section page bills it; the cover chip it used to ride
   // went with the column.
-  const cellHtml = (p, i) => `<div class="ps-hero-cell" data-idx="${i}"${i === newestIdx ? '' : ' hidden'}>${renderDuoHalf(p, { tag: 'From the Interview', btnLabel: label, btnHref: 'postscript.html', sectionBtn: false, restChipArt: true })}</div>`;
+  const cellHtml = (p, i) => `<div class="ps-hero-cell" data-idx="${i}"${i === newestIdx ? '' : ' hidden'}>${renderDuoHalf(p, { tag: 'From the Interview', btnLabel: label, btnHref: 'archive.html#section=postscript', sectionBtn: false, restChipArt: true })}</div>`;
   const bodyHtml = `
   <div class="page-rows">
   <div class="wrap">
@@ -3366,7 +4607,7 @@ function renderPostscriptPage({ currentKey, label, posts }) {
     title: label,
     bodyHtml,
     ogImage: posts.find((p) => p.image)?.image,
-    extraScripts: renderDuoPanelFitScript() + renderCoverColorScript() + renderCopyLinkScript() + renderLineDrawScript()
+    extraScripts: renderDuoPanelFitScript() + renderCoverColorScript() + renderCopyLinkScript() + renderLineDrawScript() + renderCoverCueScript()
       + renderPostscriptIndexScript(),
   });
 }
@@ -3541,11 +4782,9 @@ function renderAboutPage(founders = [], manifestoHtml = '', manifestoPost = null
       // body under it; the list; no foot line.
       key: 'subscribe', dark: true, titleDek: true,
       title: `<a href="${SITE_URL}/subscribe" rel="noopener">Subscribe</a>`,
-      body: `<p>Sign up for our free newsletter, or become a paid subscriber. For $30 a year, hundreds of paid readers get access to:</p>
+      body: `<p>${SUBSCRIBE_PITCH}</p>
       <ol class="mission-list">
-        <li>Postscript, our interview series</li>
-        <li>Contra, our criticism section</li>
-        <li>Exclusive New Critic parties</li>
+${SUBSCRIBE_GETS.map((g) => `        <li>${g}</li>`).join('\n')}
       </ol>`,
     }),
     card({
@@ -3615,7 +4854,7 @@ function renderAboutPage(founders = [], manifestoHtml = '', manifestoPost = null
     // With the hero on the page, the front page's scripts ride along for
     // it (as on the archive's feature block).
     extraScripts: (heroHtml
-      ? renderDuoPanelFitScript() + renderCardOpenScript() + renderChromeOpenScript()
+      ? renderDuoPanelFitScript() + renderCardOpenScript() + renderChromeOpenScript() + renderCoverCueScript()
         + renderCoverColorScript() + renderCopyLinkScript() + renderLineDrawScript() + renderRailFixScript()
       : '') + renderAboutMosaicScript() + renderLedgerScript(),
   // The body carries the page's own mark for what About alone does
@@ -3708,15 +4947,24 @@ function sortArrows(key, label) {
 //   banner rule is keyed on); body is the movement's content, or
 //   nothing for a deck word.
 function renderWordPage({ currentKey, title, description, mid, movements = [], extraScripts = '' }) {
-  const banner = (m) => `<section class="page-banner ${m.hook || 'store-band'} page-banner--bare">
-        <a class="banner-name" href="${escapeHtml(m.href)}"${m.href.startsWith('http') ? ' rel="noopener"' : ''}>${escapeHtml(m.word)}</a>
+  const banner = (m) => `<section class="page-banner ${m.hook || 'store-band'} page-banner--bare${m.apart ? ' page-banner--apart' : ''}">
+        ${bannerLines(m.above, 'above')}<a class="banner-name" href="${escapeHtml(m.href)}"${m.href.startsWith('http') ? ' rel="noopener"' : ''}>${escapeHtml(m.word)}</a>${bannerLines(m.below, 'below')}
       </section>`;
   //   An entry may instead be { raw } — markup set straight into
   //   .page-rows between movements (the archive's column head, which
   //   pins over the band like the reprint does) — or carry a body and
   //   no word: a movement with no banner (the ledger's rows).
+  //   The opening movement is the front page's m--latest and the rest
+  //   are m--essays — which is position speaking for dress, and right
+  //   until a page wants a movement's dress somewhere other than where
+  //   its position would put it. { mcls } says which outright. (The
+  //   archive's feature block asks for this: it stands BELOW the ledger
+  //   now and still wants the opening movement's ground, and taking
+  //   both classes would not do — .m--essays states --paper after
+  //   .m--latest in the sheet, so the later one would win and the
+  //   cards would come up on the essays' ground.)
   const movementHtml = movements.map((m, i) => m.raw ? `\n  ${m.raw}` : `
-  <div class="movement ${i === 0 ? 'm--latest' : 'm--essays'}${m.cls ? ` ${m.cls}` : ''}">
+  <div class="movement ${m.mcls || (i === 0 ? 'm--latest' : 'm--essays')}${m.cls ? ` ${m.cls}` : ''}">
   ${m.word ? banner(m) : ''}${m.body ? `
   <div class="movement-body">
   ${m.body}
@@ -3724,8 +4972,8 @@ function renderWordPage({ currentKey, title, description, mid, movements = [], e
   </div>`).join('');
   const bodyHtml = `
   <div class="page-rows">
-  ${renderSectionBand('latest', { mid, currentKey })}
-  <div class="head-seam" aria-hidden="true"></div>
+  ${renderSectionBand('latest', { mid, currentKey, bareMid: true })}
+  ${subTicker('head')}
   <div class="head-field" aria-hidden="true"></div>${movementHtml}${renderPageFoot()}
   </div>
   ${renderMarginalia()}`;
@@ -3756,7 +5004,9 @@ const LEDGER_FEATURE_SLUGS = {
 function renderLedgerFeature(features) {
   if (!features) return '';
   const rows = [
-    features.lead ? renderMegaHero(features.lead, { label: 'Essays' }) : '',
+    // EDITORS' PICKS stacked on the left margin, as THE LATEST stands on
+    // the front page's right (2026-09-18).
+    features.lead ? renderMegaHero(features.lead, { label: 'Essays', stack: 'Editors’ Picks', stackSide: 'left', stackHref: 'archive.html#section=editors' }) : '',
     renderPostscriptPair(features.pair[0], features.pair[1]),
     features.close ? renderMegaHero(features.close, { rev: true, label: 'Essays' }) : '',
   ].filter(Boolean);
@@ -3799,16 +5049,29 @@ function renderArchivePage(posts, features) {
     // struck, 2026-09-17: the page goes from the ledger's last row
     // straight to the reprint, as the front page goes from its last
     // review row.)
+    // EDITORS' PICKS FALLS BELOW THE LEDGER (2026-09-19). The feature
+    // block stood between the band and the column head, so the archive
+    // opened on four hand-picked cards and the reader had to travel
+    // past them to reach the thing the page is for. The ledger comes
+    // first now and the picks close the page under it.
+    // THE WORD STAYS AT THE TOP. It is the page's title, not the
+    // feature block's, so it keeps its own movement above the column
+    // head — which is why the first entry carries a word and no body
+    // and the last a body and no word.
     movements: [
-      { word: 'Archive', href: 'archive.html', hook: 'subscribe-band', body: renderLedgerFeature(features) },
-      { word: 'Subscribe', href: `${SITE_URL}/subscribe`, hook: 'events-band' },
+      { word: 'Archive', href: 'archive.html', hook: 'subscribe-band' },
+      // (SUBSCRIBE stood here between the feature block and the ledger
+      // head, 2026-09-18: struck. The offer is on the front page, in
+      // the nav's right slot and in the colophon; the archive is a
+      // place to look something up.)
       { raw: headHtml },
       { cls: 'm--ledger', body: ledgerHtml },
+      { mcls: 'm--latest', cls: 'm--picks', body: renderLedgerFeature(features) },
     ],
     // The homepage's own scripts for the feature block's cards — the
     // fitter, the click-to-open plates, the cover colours, share, the
     // drawn lines, the held heads — then the ledger's own.
-    extraScripts: renderDuoPanelFitScript() + renderCardOpenScript() + renderChromeOpenScript()
+    extraScripts: renderDuoPanelFitScript() + renderCardOpenScript() + renderChromeOpenScript() + renderCoverCueScript()
       + renderCoverColorScript() + renderCopyLinkScript() + renderLineDrawScript() + renderRailFixScript()
       + renderLedgerScript(),
   });
@@ -4178,7 +5441,8 @@ async function main() {
   );
 
   // The first N posts of each tag list double as their list page's lead
-  // cards (essays.html/postscript.html/contra.html) — same array
+  // cards (the section pages are retired; their rows live in the
+  // archive ledger under #section=essays/postscript/contra) — same array
   // references as essaysAll/postscriptAll/contraAll (slice() copies the
   // array, not the post objects), so backfilling their preview text here
   // also seeds it there.
@@ -4211,7 +5475,7 @@ async function main() {
   // rows) — see renderHomepage's row plan. All of essaysAll/
   // postscriptAll/contraAll get extended previews below, so these can
   // slice deeper than the list-page lead slices above.
-  const homeEssays = essaysAll.slice(0, 10);
+  const homeEssays = essaysAll.slice(0, 14);
   const homePostscripts = postscriptAll.slice(0, 8);
   // 10 now: four are spent in the rows above (one in the first
   // movement, three in the postscripts'), and the CONTRA movement's
@@ -4318,7 +5582,7 @@ async function main() {
   applyDekBylines(allPosts);
   applyTitleHyphenation(allPosts);
 
-  const html = renderHomepage({ essays: homeEssays, postscripts: homePostscripts, contras: homeContras, archives: heroArchive });
+  const html = renderHomepage({ essays: homeEssays, postscripts: homePostscripts, contras: homeContras, archives: heroArchive, pool: allPosts });
 
   // give.html is only mined for assets now (see GIVE_SRC_PATH): the
   // founders' Substack links and signature images, the latter written out
@@ -4355,9 +5619,6 @@ async function main() {
 
   const pages = {
     'index.html': html,
-    'essays.html': renderEssaysPage({ currentKey: 'essays', label: 'Essays', posts: essaysAll }),
-    'postscript.html': renderPostscriptPage({ currentKey: 'postscript', label: 'Postscript', posts: postscriptAll }),
-    'contra.html': renderListPage({ currentKey: 'contra', label: 'Contra', posts: contraAll, leadParas: CONTRA_LEAD_PARAS }),
     'about.html': renderAboutPage(founders, manifestoHtml,
       [heroArchive, essaysAll, postscriptAll, archivePosts].flat().find((p) => p && slugOf(p.link) === 'the-new-critic-secession') || null),
     'archive.html': renderArchivePage(archivePool, ledgerFeatures),
@@ -4365,7 +5626,7 @@ async function main() {
 
   fs.mkdirSync(OUT_DIR, { recursive: true });
   for (const [filename, content] of Object.entries(pages)) {
-    fs.writeFileSync(path.join(OUT_DIR, filename), markMega(content), 'utf8');
+    fs.writeFileSync(path.join(OUT_DIR, filename), markMega(holdFirstCovers(content, filename)), 'utf8');
     console.log(`Wrote ${path.join(OUT_DIR, filename)}`);
   }
   fs.writeFileSync(path.join(OUT_DIR, 'style.css'), slimCss(fs.readFileSync(path.join(__dirname, 'style.css'), 'utf8')), 'utf8');
