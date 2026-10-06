@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://use.typekit.net" crossorigin>
 <link rel="preconnect" href="https://substackcdn.com">
 <link rel="stylesheet" href="https://use.typekit.net/fnn8swo.css">
-<link rel="stylesheet" href="style.css?v=ab70bb2c">
+<link rel="stylesheet" href="style.css?v=8271f935">
 <style>:root{--colo-span:13.0076}</style>
 <style>html.fonts-loading body{opacity:0}body{transition:opacity .25s ease}</style>
 <script>
@@ -10458,6 +10458,11 @@ window.__ncStripInk = function () {
     }
   };
   var curKey = rails[0].getAttribute('data-sec');
+  var resting = function () {
+    if (hold0) hold0.classList.toggle('is-resting', (window.pageYOffset || 0) < 10);
+  };
+  resting();
+  addEventListener('scroll', resting, { passive: true });
   var lift = function () {
     allWraps().forEach(function (w) {
       if (w.__z == null) return;

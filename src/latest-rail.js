@@ -450,6 +450,14 @@
     }
   };
   var curKey = rails[0].getAttribute('data-sec');
+  // (every section shut to its name at the page's top, the one in view
+  // opening once the page moves: EVERY SECTION SHUT TILL THE PAGE MOVES,
+  // style.css)
+  var resting = function () {
+    if (hold0) hold0.classList.toggle('is-resting', (window.pageYOffset || 0) < 10);
+  };
+  resting();
+  addEventListener('scroll', resting, { passive: true });
   // (a card out on its slide stands a level over its row's other wrap,
   // so it can go over its mate: each pinned wrap is a stacking context)
   var lift = function () {
